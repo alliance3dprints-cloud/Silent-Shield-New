@@ -1,7 +1,8 @@
 // app/edit/[id]/page.tsx
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
+
 import Link from 'next/link';
 import { supabase } from '@/lib/supabaseClient';
 
@@ -18,7 +19,6 @@ type ShieldRow = {
   Date_of_Birth: string | null;
   Medical_Info: string | null;
   Notes: string | null;
-  Edit_pin_hash: string | null;
   photo_url: string | null;
 
   owner_email: string | null;
@@ -40,15 +40,6 @@ type ShieldRow = {
 
 const inputClassName =
   'w-full border border-slate-700 bg-slate-900/60 rounded px-3 py-2 text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-red-500/60';
-
-async function hashPin(pin: string): Promise<string> {
-  const enc = new TextEncoder();
-  const data = enc.encode(pin);
-  const digest = await crypto.subtle.digest('SHA-256', data);
-  return Array.from(new Uint8Array(digest))
-    .map((b) => b.toString(16).padStart(2, '0'))
-    .join('');
-}
 
 async function uploadProfilePhoto(shieldId: string, file: File) {
   const fileExt = file.name.split('.').pop() || 'jpg';
@@ -74,7 +65,7 @@ async function uploadProfilePhoto(shieldId: string, file: File) {
 export default function EditShieldPage({ params }: EditPageProps) {
   const shieldId = params.id;
 
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [row, setRow] = useState<ShieldRow | null>(null);
   const [pinInput, setPinInput] = useState('');
   const [pinError, setPinError] = useState<string | null>(null);
@@ -112,29 +103,6 @@ export default function EditShieldPage({ params }: EditPageProps) {
     useState<'idle' | 'saving' | 'success' | 'error'>('idle');
   const [saveError, setSaveError] = useState<string | null>(null);
 
-  useEffect(() => {
-    async function loadRow() {
-      setLoading(true);
-
-      const { data, error } = await supabase
-        .from('silent_shields')
-        .select('*')
-        .eq('id', shieldId)
-        .maybeSingle<ShieldRow>();
-
-      if (error) {
-        console.error(error);
-        setRow(null);
-      } else {
-        setRow(data);
-      }
-
-      setLoading(false);
-    }
-
-    loadRow();
-  }, [shieldId]);
-
   function handlePhotoChange(file: File | null) {
     setPhotoFile(file);
 
@@ -148,9 +116,6 @@ export default function EditShieldPage({ params }: EditPageProps) {
 
   async function handleVerifyPin(e: React.FormEvent) {
     e.preventDefault();
-
-    if (!row) return;
-
     setPinError(null);
 
     if (!pinInput) {
@@ -158,46 +123,58 @@ export default function EditShieldPage({ params }: EditPageProps) {
       return;
     }
 
-    try {
-      const enteredHash = await hashPin(pinInput);
+    setLoading(true);
 
-      if (!row.Edit_pin_hash || enteredHash !== row.Edit_pin_hash) {
-        setPinError('Incorrect PIN.');
+    try {
+      const res = await fetch('/api/verify-pin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ shieldId, pin: pinInput }),
+      });
+
+      if (!res.ok) {
+        const body = await res.json();
+        setPinError(res.status === 401 ? 'Incorrect PIN.' : (body.error || 'Shield not found.'));
+        setLoading(false);
         return;
       }
 
+      const { data: verifiedRow } = await res.json() as { data: ShieldRow };
+      setRow(verifiedRow);
       setVerified(true);
 
-      setCategory(row.profile_type ?? 'general');
-      setName(row.Name ?? '');
-      setDob(row.Date_of_Birth ?? '');
-      setAddress(row.Address ?? '');
+      setCategory(verifiedRow.profile_type ?? 'general');
+      setName(verifiedRow.Name ?? '');
+      setDob(verifiedRow.Date_of_Birth ?? '');
+      setAddress(verifiedRow.Address ?? '');
 
-      setPhotoUrl(row.photo_url ?? null);
-      setPhotoPreview(row.photo_url ?? null);
+      setPhotoUrl(verifiedRow.photo_url ?? null);
+      setPhotoPreview(verifiedRow.photo_url ?? null);
 
-      setOwnerEmail(row.owner_email ?? '');
-      setOwnerEmailConsent(row.owner_email_consent ?? false);
+      setOwnerEmail(verifiedRow.owner_email ?? '');
+      setOwnerEmailConsent(verifiedRow.owner_email_consent ?? false);
 
-      setEmName(row.Emergency_Contact_Name ?? '');
-      setEmPhone(row.Emergency_Contact_Phone ?? '');
-      setContact1Relationship(row.contact_1_relationship ?? '');
+      setEmName(verifiedRow.Emergency_Contact_Name ?? '');
+      setEmPhone(verifiedRow.Emergency_Contact_Phone ?? '');
+      setContact1Relationship(verifiedRow.contact_1_relationship ?? '');
 
-      setContact2Name(row.contact_2_name ?? '');
-      setContact2Phone(row.contact_2_phone ?? '');
-      setContact2Relationship(row.contact_2_relationship ?? '');
+      setContact2Name(verifiedRow.contact_2_name ?? '');
+      setContact2Phone(verifiedRow.contact_2_phone ?? '');
+      setContact2Relationship(verifiedRow.contact_2_relationship ?? '');
 
-      setConditions(row.conditions ?? '');
-      setAllergies(row.allergies ?? '');
-      setMedications(row.medications ?? '');
-      setBloodType(row.blood_type ?? '');
+      setConditions(verifiedRow.conditions ?? '');
+      setAllergies(verifiedRow.allergies ?? '');
+      setMedications(verifiedRow.medications ?? '');
+      setBloodType(verifiedRow.blood_type ?? '');
 
-      setCriticalNotes(row.critical_notes ?? row.Medical_Info ?? '');
-      setEmergencyInstructions(row.emergency_instructions ?? row.Notes ?? '');
+      setCriticalNotes(verifiedRow.critical_notes ?? verifiedRow.Medical_Info ?? '');
+      setEmergencyInstructions(verifiedRow.emergency_instructions ?? verifiedRow.Notes ?? '');
     } catch (err) {
       console.error(err);
-      setPinError('Something went wrong checking the PIN.');
+      setPinError('Something went wrong. Please try again.');
     }
+
+    setLoading(false);
   }
 
   async function handleSave(e: React.FormEvent) {
@@ -265,27 +242,6 @@ export default function EditShieldPage({ params }: EditPageProps) {
     }
   }
 
-  if (loading) {
-    return (
-      <main className="min-h-screen flex items-center justify-center bg-slate-900 text-slate-100">
-        <p>Loading…</p>
-      </main>
-    );
-  }
-
-  if (!row) {
-    return (
-      <main className="min-h-screen flex items-center justify-center bg-slate-900 text-slate-100 px-4">
-        <div className="w-full max-w-md rounded-2xl bg-slate-950/90 border border-slate-700 shadow-xl px-6 py-7 text-center">
-          <h1 className="text-2xl font-bold text-white">Silent Shield Not Found</h1>
-          <p className="mt-2 text-sm text-slate-400">
-            We could not find this Silent Shield.
-          </p>
-        </div>
-      </main>
-    );
-  }
-
   return (
     <main className="min-h-screen flex items-center justify-center bg-slate-900 px-4 py-6">
       <div className="w-full max-w-md rounded-2xl bg-slate-950/90 border border-slate-700 shadow-xl px-6 py-7 space-y-5">
@@ -322,9 +278,10 @@ export default function EditShieldPage({ params }: EditPageProps) {
 
             <button
               type="submit"
-              className="w-full bg-red-500 hover:bg-red-600 text-white rounded-lg py-2.5 text-sm font-semibold transition"
+              disabled={loading}
+              className="w-full bg-red-500 hover:bg-red-600 text-white rounded-lg py-2.5 text-sm font-semibold disabled:opacity-60 transition"
             >
-              Unlock
+              {loading ? 'Verifying…' : 'Unlock'}
             </button>
           </form>
         ) : (

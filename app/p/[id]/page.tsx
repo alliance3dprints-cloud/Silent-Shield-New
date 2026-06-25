@@ -1,7 +1,7 @@
 // app/p/[id]/page.tsx
 export const dynamic = 'force-dynamic';
 
-import { Radio } from 'lucide-react';
+import { headers } from 'next/headers';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabaseClient';
 
@@ -211,6 +211,19 @@ export default async function PublicShieldPage({ params }: PublicPageProps) {
         </div>
       </main>
     );
+  }
+
+  if (data && data.Activated === true) {
+    const headersList = headers();
+    const ip = headersList.get('x-forwarded-for')?.split(',')[0]?.trim() || null;
+    const userAgent = headersList.get('user-agent') || null;
+
+    supabase
+      .from('scan_events')
+      .insert({ shield_id: shieldId, ip_address: ip, user_agent: userAgent })
+      .then(({ error: logError }) => {
+        if (logError) console.error('Scan log failed:', logError);
+      });
   }
 
   if (!data || data.Activated !== true) {
