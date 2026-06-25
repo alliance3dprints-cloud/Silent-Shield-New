@@ -1,0 +1,652 @@
+// app/edit/[id]/page.tsx
+'use client';
+
+import { useEffect, useState } from 'react';
+import Link from 'next/link';
+import { supabase } from '@/lib/supabaseClient';
+
+type EditPageProps = {
+  params: { id: string };
+};
+
+type ShieldRow = {
+  id: string;
+  Name: string | null;
+  Address: string | null;
+  Emergency_Contact_Name: string | null;
+  Emergency_Contact_Phone: string | null;
+  Date_of_Birth: string | null;
+  Medical_Info: string | null;
+  Notes: string | null;
+  Edit_pin_hash: string | null;
+  photo_url: string | null;
+
+  owner_email: string | null;
+  owner_email_consent: boolean | null;
+
+  contact_2_name: string | null;
+  contact_2_phone: string | null;
+  contact_1_relationship: string | null;
+  contact_2_relationship: string | null;
+
+  conditions: string | null;
+  allergies: string | null;
+  medications: string | null;
+  blood_type: string | null;
+  critical_notes: string | null;
+  emergency_instructions: string | null;
+  profile_type: string | null;
+};
+
+const inputClassName =
+  'w-full border border-slate-700 bg-slate-900/60 rounded px-3 py-2 text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-red-500/60';
+
+async function hashPin(pin: string): Promise<string> {
+  const enc = new TextEncoder();
+  const data = enc.encode(pin);
+  const digest = await crypto.subtle.digest('SHA-256', data);
+  return Array.from(new Uint8Array(digest))
+    .map((b) => b.toString(16).padStart(2, '0'))
+    .join('');
+}
+
+async function uploadProfilePhoto(shieldId: string, file: File) {
+  const fileExt = file.name.split('.').pop() || 'jpg';
+  const cleanExt = fileExt.toLowerCase().replace(/[^a-z0-9]/g, '');
+  const filePath = `${shieldId}/${Date.now()}.${cleanExt}`;
+
+  const { error } = await supabase.storage
+    .from('shield-profile-photos')
+    .upload(filePath, file, {
+      cacheControl: '3600',
+      upsert: true,
+    });
+
+  if (error) throw error;
+
+  const { data } = supabase.storage
+    .from('shield-profile-photos')
+    .getPublicUrl(filePath);
+
+  return data.publicUrl;
+}
+
+export default function EditShieldPage({ params }: EditPageProps) {
+  const shieldId = params.id;
+
+  const [loading, setLoading] = useState(true);
+  const [row, setRow] = useState<ShieldRow | null>(null);
+  const [pinInput, setPinInput] = useState('');
+  const [pinError, setPinError] = useState<string | null>(null);
+  const [verified, setVerified] = useState(false);
+
+  const [category, setCategory] = useState('general');
+  const [name, setName] = useState('');
+  const [dob, setDob] = useState('');
+  const [address, setAddress] = useState('');
+
+  const [photoUrl, setPhotoUrl] = useState<string | null>(null);
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+
+  const [ownerEmail, setOwnerEmail] = useState('');
+  const [ownerEmailConsent, setOwnerEmailConsent] = useState(false);
+
+  const [emName, setEmName] = useState('');
+  const [emPhone, setEmPhone] = useState('');
+  const [contact1Relationship, setContact1Relationship] = useState('');
+
+  const [contact2Name, setContact2Name] = useState('');
+  const [contact2Phone, setContact2Phone] = useState('');
+  const [contact2Relationship, setContact2Relationship] = useState('');
+
+  const [conditions, setConditions] = useState('');
+  const [allergies, setAllergies] = useState('');
+  const [medications, setMedications] = useState('');
+  const [bloodType, setBloodType] = useState('');
+
+  const [criticalNotes, setCriticalNotes] = useState('');
+  const [emergencyInstructions, setEmergencyInstructions] = useState('');
+
+  const [saveStatus, setSaveStatus] =
+    useState<'idle' | 'saving' | 'success' | 'error'>('idle');
+  const [saveError, setSaveError] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function loadRow() {
+      setLoading(true);
+
+      const { data, error } = await supabase
+        .from('silent_shields')
+        .select('*')
+        .eq('id', shieldId)
+        .maybeSingle<ShieldRow>();
+
+      if (error) {
+        console.error(error);
+        setRow(null);
+      } else {
+        setRow(data);
+      }
+
+      setLoading(false);
+    }
+
+    loadRow();
+  }, [shieldId]);
+
+  function handlePhotoChange(file: File | null) {
+    setPhotoFile(file);
+
+    if (!file) {
+      setPhotoPreview(photoUrl);
+      return;
+    }
+
+    setPhotoPreview(URL.createObjectURL(file));
+  }
+
+  async function handleVerifyPin(e: React.FormEvent) {
+    e.preventDefault();
+
+    if (!row) return;
+
+    setPinError(null);
+
+    if (!pinInput) {
+      setPinError('Please enter your PIN.');
+      return;
+    }
+
+    try {
+      const enteredHash = await hashPin(pinInput);
+
+      if (!row.Edit_pin_hash || enteredHash !== row.Edit_pin_hash) {
+        setPinError('Incorrect PIN.');
+        return;
+      }
+
+      setVerified(true);
+
+      setCategory(row.profile_type ?? 'general');
+      setName(row.Name ?? '');
+      setDob(row.Date_of_Birth ?? '');
+      setAddress(row.Address ?? '');
+
+      setPhotoUrl(row.photo_url ?? null);
+      setPhotoPreview(row.photo_url ?? null);
+
+      setOwnerEmail(row.owner_email ?? '');
+      setOwnerEmailConsent(row.owner_email_consent ?? false);
+
+      setEmName(row.Emergency_Contact_Name ?? '');
+      setEmPhone(row.Emergency_Contact_Phone ?? '');
+      setContact1Relationship(row.contact_1_relationship ?? '');
+
+      setContact2Name(row.contact_2_name ?? '');
+      setContact2Phone(row.contact_2_phone ?? '');
+      setContact2Relationship(row.contact_2_relationship ?? '');
+
+      setConditions(row.conditions ?? '');
+      setAllergies(row.allergies ?? '');
+      setMedications(row.medications ?? '');
+      setBloodType(row.blood_type ?? '');
+
+      setCriticalNotes(row.critical_notes ?? row.Medical_Info ?? '');
+      setEmergencyInstructions(row.emergency_instructions ?? row.Notes ?? '');
+    } catch (err) {
+      console.error(err);
+      setPinError('Something went wrong checking the PIN.');
+    }
+  }
+
+  async function handleSave(e: React.FormEvent) {
+    e.preventDefault();
+
+    setSaveError(null);
+    setSaveStatus('saving');
+
+    if (ownerEmail && !ownerEmailConsent) {
+      setSaveStatus('error');
+      setSaveError('Please check the email consent box or remove the email address.');
+      return;
+    }
+
+    try {
+      const updatedPhotoUrl = photoFile
+        ? await uploadProfilePhoto(shieldId, photoFile)
+        : photoUrl;
+
+      const { error } = await supabase
+        .from('silent_shields')
+        .update({
+          profile_type: category || 'general',
+          Name: name || null,
+          Date_of_Birth: dob || null,
+          Address: address || null,
+          photo_url: updatedPhotoUrl || null,
+
+          owner_email: ownerEmail || null,
+          owner_email_consent: ownerEmail ? ownerEmailConsent : false,
+
+          Emergency_Contact_Name: emName || null,
+          Emergency_Contact_Phone: emPhone || null,
+          contact_1_relationship: contact1Relationship || null,
+
+          contact_2_name: contact2Name || null,
+          contact_2_phone: contact2Phone || null,
+          contact_2_relationship: contact2Relationship || null,
+
+          conditions: conditions || null,
+          allergies: allergies || null,
+          medications: medications || null,
+          blood_type: bloodType || null,
+
+          critical_notes: criticalNotes || null,
+          emergency_instructions: emergencyInstructions || null,
+
+          last_updated_at: new Date().toISOString(),
+        })
+        .eq('id', shieldId);
+
+      if (error) {
+        console.error(error);
+        setSaveStatus('error');
+        setSaveError('Failed to save changes. Please try again.');
+        return;
+      }
+
+      setPhotoUrl(updatedPhotoUrl || null);
+      setSaveStatus('success');
+    } catch (err) {
+      console.error(err);
+      setSaveStatus('error');
+      setSaveError('Failed to upload photo or save changes. Please try again.');
+    }
+  }
+
+  if (loading) {
+    return (
+      <main className="min-h-screen flex items-center justify-center bg-slate-900 text-slate-100">
+        <p>Loading…</p>
+      </main>
+    );
+  }
+
+  if (!row) {
+    return (
+      <main className="min-h-screen flex items-center justify-center bg-slate-900 text-slate-100 px-4">
+        <div className="w-full max-w-md rounded-2xl bg-slate-950/90 border border-slate-700 shadow-xl px-6 py-7 text-center">
+          <h1 className="text-2xl font-bold text-white">Silent Shield Not Found</h1>
+          <p className="mt-2 text-sm text-slate-400">
+            We could not find this Silent Shield.
+          </p>
+        </div>
+      </main>
+    );
+  }
+
+  return (
+    <main className="min-h-screen flex items-center justify-center bg-slate-900 px-4 py-6">
+      <div className="w-full max-w-md rounded-2xl bg-slate-950/90 border border-slate-700 shadow-xl px-6 py-7 space-y-5">
+        <div className="flex justify-center mt-2">
+          <p className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-[11px] font-semibold tracking-[0.2em] uppercase bg-red-500/10 text-red-400 border border-red-500/40">
+            <span className="h-1.5 w-1.5 rounded-full bg-red-400 animate-pulse" />
+            Emergency ID
+          </p>
+        </div>
+
+        <h1 className="mt-3 text-center text-3xl font-bold text-white tracking-tight">
+          Edit Silent Shield
+        </h1>
+
+        <p className="text-center text-xs text-slate-400 mt-1">
+          Shield ID: <span className="font-mono text-slate-200">{shieldId}</span>
+        </p>
+
+        {!verified ? (
+          <form onSubmit={handleVerifyPin} className="space-y-4">
+            <p className="text-sm text-slate-400 text-center">
+              Enter the PIN you created when this Silent Shield was activated.
+            </p>
+
+            <input
+              type="password"
+              value={pinInput}
+              onChange={(e) => setPinInput(e.target.value)}
+              className={inputClassName}
+              placeholder="Edit PIN"
+            />
+
+            {pinError && <p className="text-sm text-red-400">{pinError}</p>}
+
+            <button
+              type="submit"
+              className="w-full bg-red-500 hover:bg-red-600 text-white rounded-lg py-2.5 text-sm font-semibold transition"
+            >
+              Unlock
+            </button>
+          </form>
+        ) : (
+          <form onSubmit={handleSave} className="space-y-4">
+            <Section title="Profile Information">
+              <FieldLabel label="Category">
+                <select
+                  value={category}
+                  onChange={(e) => setCategory(e.target.value)}
+                  className={inputClassName}
+                >
+                  <option value="general">General Emergency ID</option>
+                  <option value="child">Child Safety</option>
+                  <option value="adult">Adult Emergency ID</option>
+                  <option value="senior">Senior Safety</option>
+                  <option value="medical">Medical Alert</option>
+                  <option value="autism">Autism / Nonverbal</option>
+                  <option value="disability">Disability Support</option>
+                  <option value="veteran">Veteran</option>
+                  <option value="law_enforcement">Law Enforcement</option>
+                  <option value="first_responder">First Responder</option>
+                </select>
+              </FieldLabel>
+
+              <TextInput label="Name" value={name} onChange={setName} />
+
+              <FieldLabel label="Date of Birth">
+                <input
+                  type="date"
+                  value={dob}
+                  onChange={(e) => setDob(e.target.value)}
+                  className={inputClassName}
+                />
+              </FieldLabel>
+
+              <PhotoUpload previewUrl={photoPreview} onChange={handlePhotoChange} />
+
+              <TextInput label="Address" value={address} onChange={setAddress} />
+            </Section>
+
+            <Section title="Owner Email">
+              <div className="space-y-3">
+                <TextInput
+                  label="Email Address Optional"
+                  value={ownerEmail}
+                  onChange={setOwnerEmail}
+                />
+
+                <p className="text-[11px] text-slate-400">
+                  Used only for important Silent Shield updates, profile review reminders,
+                  and support related to this shield.
+                </p>
+
+                <label className="flex items-start gap-3">
+                  <input
+                    type="checkbox"
+                    checked={ownerEmailConsent}
+                    onChange={(e) => setOwnerEmailConsent(e.target.checked)}
+                    className="mt-1 h-4 w-4 rounded border-slate-600 bg-slate-900"
+                  />
+
+                  <span className="text-xs leading-relaxed text-slate-300">
+                    I agree to receive important updates about this Silent Shield profile.
+                  </span>
+                </label>
+              </div>
+            </Section>
+
+            <Section title="Primary Contact">
+              <TextInput label="Name" value={emName} onChange={setEmName} />
+
+              <FieldLabel label="Relationship">
+                <RelationshipSelect
+                  value={contact1Relationship}
+                  onChange={setContact1Relationship}
+                />
+              </FieldLabel>
+
+              <TextInput label="Phone" value={emPhone} onChange={setEmPhone} />
+            </Section>
+
+            <Section title="Secondary Contact">
+              <TextInput label="Name" value={contact2Name} onChange={setContact2Name} />
+
+              <FieldLabel label="Relationship">
+                <RelationshipSelect
+                  value={contact2Relationship}
+                  onChange={setContact2Relationship}
+                />
+              </FieldLabel>
+
+              <TextInput label="Phone" value={contact2Phone} onChange={setContact2Phone} />
+            </Section>
+
+            <Section title="Medical Information">
+              <TextArea label="Conditions" value={conditions} onChange={setConditions} />
+              <TextArea label="Allergies" value={allergies} onChange={setAllergies} />
+              <TextArea label="Medications" value={medications} onChange={setMedications} />
+
+              <FieldLabel label="Blood Type">
+                <BloodTypeSelect value={bloodType} onChange={setBloodType} />
+              </FieldLabel>
+            </Section>
+
+            <Section title="Emergency Instructions">
+              <TextArea
+                label="Critical Notes"
+                value={criticalNotes}
+                onChange={setCriticalNotes}
+                rows={2}
+                placeholder="Example: Nonverbal, diabetic, seizure risk, severe allergy"
+              />
+
+              <TextArea
+                label="Emergency Instructions"
+                value={emergencyInstructions}
+                onChange={setEmergencyInstructions}
+                rows={3}
+                placeholder="Example: Call parent immediately. Keep calm. Do not restrain during seizure."
+              />
+            </Section>
+
+            <div className="rounded-xl border border-yellow-500/30 bg-yellow-500/10 p-3">
+              <p className="text-xs text-slate-300 leading-relaxed">
+                By saving changes, you acknowledge that you are responsible for keeping
+                this profile accurate and up to date. Silent Shield does not provide
+                GPS tracking, emergency dispatch, or real-time monitoring.
+              </p>
+            </div>
+
+            {saveError && <p className="text-sm text-red-400">{saveError}</p>}
+
+            <button
+              type="submit"
+              disabled={saveStatus === 'saving'}
+              className="w-full mt-3 bg-red-500 hover:bg-red-600 text-white rounded-lg py-2.5 text-sm font-semibold disabled:opacity-60 transition"
+            >
+              {saveStatus === 'saving' ? 'Saving…' : 'Save Changes'}
+            </button>
+
+            {saveStatus === 'success' && (
+              <div className="space-y-3">
+                <p className="text-sm text-emerald-400 text-center">
+                  Changes saved!
+                </p>
+
+                <Link
+                  href={`/p/${shieldId}`}
+                  className="block w-full text-center rounded-lg border border-slate-700 bg-slate-900/60 px-4 py-2 text-sm font-semibold text-slate-100 hover:bg-slate-800"
+                >
+                  View Public Profile
+                </Link>
+              </div>
+            )}
+          </form>
+        )}
+      </div>
+    </main>
+  );
+}
+
+function Section({
+  title,
+  children,
+}: {
+  title: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="pt-3 border-t border-slate-800 space-y-4">
+      <h3 className="text-sm font-semibold text-red-300">{title}</h3>
+      {children}
+    </div>
+  );
+}
+
+function FieldLabel({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div>
+      <label className="block text-xs font-semibold mb-1 text-slate-200">
+        {label}
+      </label>
+      {children}
+    </div>
+  );
+}
+
+function TextInput({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+}) {
+  return (
+    <FieldLabel label={label}>
+      <input
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className={inputClassName}
+      />
+    </FieldLabel>
+  );
+}
+
+function TextArea({
+  label,
+  value,
+  onChange,
+  rows = 2,
+  placeholder,
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  rows?: number;
+  placeholder?: string;
+}) {
+  return (
+    <FieldLabel label={label}>
+      <textarea
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        rows={rows}
+        placeholder={placeholder}
+        className={inputClassName}
+      />
+    </FieldLabel>
+  );
+}
+
+function PhotoUpload({
+  previewUrl,
+  onChange,
+}: {
+  previewUrl: string | null;
+  onChange: (file: File | null) => void;
+}) {
+  return (
+    <FieldLabel label="Profile Photo">
+      <div className="flex items-center gap-4">
+        <div className="h-20 w-20 shrink-0 overflow-hidden rounded-full border border-slate-700 bg-slate-900/80 flex items-center justify-center">
+          {previewUrl ? (
+            <img
+              src={previewUrl}
+              alt="Profile preview"
+              className="h-full w-full object-cover"
+            />
+          ) : (
+            <span className="text-xs text-slate-500 text-center px-2">
+              No Photo
+            </span>
+          )}
+        </div>
+
+        <div className="flex-1 space-y-2">
+          <input
+            type="file"
+            accept="image/png,image/jpeg,image/webp,image/heic,image/heif"
+            onChange={(e) => onChange(e.target.files?.[0] ?? null)}
+            className="block w-full text-xs text-slate-300 file:mr-3 file:rounded-md file:border-0 file:bg-red-500 file:px-3 file:py-2 file:text-xs file:font-semibold file:text-white hover:file:bg-red-600"
+          />
+          <p className="text-[11px] text-slate-500">
+            Optional. Best for children, seniors, or anyone who may need identification.
+          </p>
+        </div>
+      </div>
+    </FieldLabel>
+  );
+}
+
+function RelationshipSelect({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+}) {
+  return (
+    <select value={value} onChange={(e) => onChange(e.target.value)} className={inputClassName}>
+      <option value="">Select Relationship</option>
+      <option value="Mother">Mother</option>
+      <option value="Father">Father</option>
+      <option value="Parent">Parent</option>
+      <option value="Guardian">Guardian</option>
+      <option value="Spouse">Spouse</option>
+      <option value="Caregiver">Caregiver</option>
+      <option value="Grandparent">Grandparent</option>
+      <option value="Sibling">Sibling</option>
+      <option value="Friend">Friend</option>
+      <option value="Emergency Contact">Emergency Contact</option>
+    </select>
+  );
+}
+
+function BloodTypeSelect({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+}) {
+  return (
+    <select value={value} onChange={(e) => onChange(e.target.value)} className={inputClassName}>
+      <option value="">Select Blood Type</option>
+      <option value="A+">A+</option>
+      <option value="A-">A-</option>
+      <option value="B+">B+</option>
+      <option value="B-">B-</option>
+      <option value="AB+">AB+</option>
+      <option value="AB-">AB-</option>
+      <option value="O+">O+</option>
+      <option value="O-">O-</option>
+      <option value="Unknown">Unknown</option>
+    </select>
+  );
+}
