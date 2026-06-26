@@ -224,16 +224,6 @@ export default async function PublicShieldPage({ params }: PublicPageProps) {
       .then(({ error: logError }) => {
         if (logError) console.error('Scan log failed:', logError);
       });
-
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.VERCEL_URL
-      ? `https://${process.env.VERCEL_URL}`
-      : 'http://localhost:3000';
-
-    fetch(`${appUrl}/api/notify-scan`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ shieldId, ip, userAgent }),
-    }).catch((err) => console.error('Notify failed:', err));
   }
 
   if (!data || data.Activated !== true) {
