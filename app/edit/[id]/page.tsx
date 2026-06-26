@@ -36,6 +36,8 @@ type ShieldRow = {
   critical_notes: string | null;
   emergency_instructions: string | null;
   profile_type: string | null;
+  subscription_tier: string | null;
+  notify_on_scan: boolean | null;
 };
 
 const inputClassName =
@@ -98,6 +100,8 @@ export default function EditShieldPage({ params }: EditPageProps) {
 
   const [criticalNotes, setCriticalNotes] = useState('');
   const [emergencyInstructions, setEmergencyInstructions] = useState('');
+
+  const [notifyOnScan, setNotifyOnScan] = useState(false);
 
   const [saveStatus, setSaveStatus] =
     useState<'idle' | 'saving' | 'success' | 'error'>('idle');
@@ -169,6 +173,8 @@ export default function EditShieldPage({ params }: EditPageProps) {
 
       setCriticalNotes(verifiedRow.critical_notes ?? verifiedRow.Medical_Info ?? '');
       setEmergencyInstructions(verifiedRow.emergency_instructions ?? verifiedRow.Notes ?? '');
+
+      setNotifyOnScan(verifiedRow.notify_on_scan ?? false);
     } catch (err) {
       console.error(err);
       setPinError('Something went wrong. Please try again.');
@@ -221,6 +227,8 @@ export default function EditShieldPage({ params }: EditPageProps) {
 
           critical_notes: criticalNotes || null,
           emergency_instructions: emergencyInstructions || null,
+
+          notify_on_scan: notifyOnScan,
 
           last_updated_at: new Date().toISOString(),
         })
@@ -402,6 +410,61 @@ export default function EditShieldPage({ params }: EditPageProps) {
                 rows={3}
                 placeholder="Example: Call parent immediately. Keep calm. Do not restrain during seizure."
               />
+            </Section>
+
+            <Section title="Scan Notifications">
+              {row?.subscription_tier === 'premium' ? (
+                <div className="space-y-3">
+                  <label className="flex items-start gap-3">
+                    <input
+                      type="checkbox"
+                      checked={notifyOnScan}
+                      onChange={(e) => setNotifyOnScan(e.target.checked)}
+                      className="mt-1 h-4 w-4 rounded border-slate-600 bg-slate-900"
+                    />
+                    <span className="text-xs leading-relaxed text-slate-300">
+                      Send me an email alert when this Silent Shield is scanned
+                    </span>
+                  </label>
+
+                  {notifyOnScan && !ownerEmail && (
+                    <p className="text-xs text-amber-400">
+                      Add an email address in the Owner Email section above to receive alerts.
+                    </p>
+                  )}
+
+                  <Link
+                    href={`/history/${shieldId}`}
+                    className="block w-full text-center rounded-lg border border-amber-500/40 bg-amber-500/10 px-4 py-2 text-sm font-semibold text-amber-300 hover:bg-amber-500/20"
+                  >
+                    View Scan History
+                  </Link>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <div className="rounded-xl border border-amber-500/30 bg-amber-500/5 p-4 space-y-2">
+                    <p className="text-sm font-semibold text-amber-300">
+                      Silent Shield Premium
+                    </p>
+                    <p className="text-xs text-slate-400 leading-relaxed">
+                      Get real-time email alerts when your shield is scanned,
+                      view full scan history, and more.
+                    </p>
+                    <p className="text-sm font-bold text-white">
+                      $3.99<span className="text-xs font-normal text-slate-400">/month</span>
+                      {' '}or{' '}
+                      $39.99<span className="text-xs font-normal text-slate-400">/year</span>
+                    </p>
+                  </div>
+
+                  <Link
+                    href={`/premium/${shieldId}`}
+                    className="block w-full text-center rounded-lg bg-amber-500 hover:bg-amber-600 px-4 py-2 text-sm font-bold text-white shadow-lg shadow-amber-500/20 transition"
+                  >
+                    Upgrade to Premium
+                  </Link>
+                </div>
+              )}
             </Section>
 
             <div className="rounded-xl border border-yellow-500/30 bg-yellow-500/10 p-3">
