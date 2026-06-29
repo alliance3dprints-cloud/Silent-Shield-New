@@ -1,7 +1,8 @@
 // app/edit/[id]/page.tsx
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 
 import Link from 'next/link';
 import { supabase } from '@/lib/supabaseClient';
@@ -64,6 +65,8 @@ async function uploadProfilePhoto(shieldId: string, file: File) {
 
 export default function EditShieldPage({ params }: EditPageProps) {
   const shieldId = params.id;
+  const searchParams = useSearchParams();
+  const isRecovery = searchParams.get('recover') === 'true';
 
   const [loading, setLoading] = useState(false);
   const [row, setRow] = useState<ShieldRow | null>(null);
@@ -99,9 +102,85 @@ export default function EditShieldPage({ params }: EditPageProps) {
   const [criticalNotes, setCriticalNotes] = useState('');
   const [emergencyInstructions, setEmergencyInstructions] = useState('');
 
+  const [isOwner, setIsOwner] = useState(false);
+  const [isClaimed, setIsClaimed] = useState(false);
+  const [showPinReset, setShowPinReset] = useState(false);
+  const [newPin, setNewPin] = useState('');
+  const [confirmNewPin, setConfirmNewPin] = useState('');
+  const [pinResetStatus, setPinResetStatus] = useState<'idle' | 'saving' | 'success' | 'error'>('idle');
+  const [pinResetError, setPinResetError] = useState<string | null>(null);
+
   const [saveStatus, setSaveStatus] =
     useState<'idle' | 'saving' | 'success' | 'error'>('idle');
   const [saveError, setSaveError] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function checkOwnership() {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data: ownership } = await supabase
+        .from('shield_owners')
+        .select('id')
+        .eq('shield_id', shieldId)
+        .eq('owner_id', user.id)
+        .maybeSingle();
+
+      if (ownership) {
+        setIsOwner(true);
+        setIsClaimed(true);
+
+        if (isRecovery) {
+          setShowPinReset(true);
+        }
+
+        const { data: shieldData } = await supabase
+          .from('silent_shields')
+          .select('*')
+          .eq('id', shieldId)
+          .maybeSingle();
+
+        if (shieldData) {
+          const { Edit_pin_hash, ...safeRow } = shieldData;
+          populateForm(safeRow as ShieldRow);
+          setVerified(true);
+        }
+      } else {
+        const { data: anyOwner } = await supabase
+          .from('shield_owners')
+          .select('id')
+          .eq('shield_id', shieldId)
+          .maybeSingle();
+        setIsClaimed(!!anyOwner);
+      }
+    }
+
+    checkOwnership();
+  }, [shieldId]);
+
+  function populateForm(verifiedRow: ShieldRow) {
+    setRow(verifiedRow);
+    setCategory(verifiedRow.profile_type ?? 'general');
+    setName(verifiedRow.Name ?? '');
+    setDob(verifiedRow.Date_of_Birth ?? '');
+    setAddress(verifiedRow.Address ?? '');
+    setPhotoUrl(verifiedRow.photo_url ?? null);
+    setPhotoPreview(verifiedRow.photo_url ?? null);
+    setOwnerEmail(verifiedRow.owner_email ?? '');
+    setOwnerEmailConsent(verifiedRow.owner_email_consent ?? false);
+    setEmName(verifiedRow.Emergency_Contact_Name ?? '');
+    setEmPhone(verifiedRow.Emergency_Contact_Phone ?? '');
+    setContact1Relationship(verifiedRow.contact_1_relationship ?? '');
+    setContact2Name(verifiedRow.contact_2_name ?? '');
+    setContact2Phone(verifiedRow.contact_2_phone ?? '');
+    setContact2Relationship(verifiedRow.contact_2_relationship ?? '');
+    setConditions(verifiedRow.conditions ?? '');
+    setAllergies(verifiedRow.allergies ?? '');
+    setMedications(verifiedRow.medications ?? '');
+    setBloodType(verifiedRow.blood_type ?? '');
+    setCriticalNotes(verifiedRow.critical_notes ?? verifiedRow.Medical_Info ?? '');
+    setEmergencyInstructions(verifiedRow.emergency_instructions ?? verifiedRow.Notes ?? '');
+  }
 
   function handlePhotoChange(file: File | null) {
     setPhotoFile(file);
@@ -140,35 +219,8 @@ export default function EditShieldPage({ params }: EditPageProps) {
       }
 
       const { data: verifiedRow } = await res.json() as { data: ShieldRow };
-      setRow(verifiedRow);
+      populateForm(verifiedRow);
       setVerified(true);
-
-      setCategory(verifiedRow.profile_type ?? 'general');
-      setName(verifiedRow.Name ?? '');
-      setDob(verifiedRow.Date_of_Birth ?? '');
-      setAddress(verifiedRow.Address ?? '');
-
-      setPhotoUrl(verifiedRow.photo_url ?? null);
-      setPhotoPreview(verifiedRow.photo_url ?? null);
-
-      setOwnerEmail(verifiedRow.owner_email ?? '');
-      setOwnerEmailConsent(verifiedRow.owner_email_consent ?? false);
-
-      setEmName(verifiedRow.Emergency_Contact_Name ?? '');
-      setEmPhone(verifiedRow.Emergency_Contact_Phone ?? '');
-      setContact1Relationship(verifiedRow.contact_1_relationship ?? '');
-
-      setContact2Name(verifiedRow.contact_2_name ?? '');
-      setContact2Phone(verifiedRow.contact_2_phone ?? '');
-      setContact2Relationship(verifiedRow.contact_2_relationship ?? '');
-
-      setConditions(verifiedRow.conditions ?? '');
-      setAllergies(verifiedRow.allergies ?? '');
-      setMedications(verifiedRow.medications ?? '');
-      setBloodType(verifiedRow.blood_type ?? '');
-
-      setCriticalNotes(verifiedRow.critical_notes ?? verifiedRow.Medical_Info ?? '');
-      setEmergencyInstructions(verifiedRow.emergency_instructions ?? verifiedRow.Notes ?? '');
     } catch (err) {
       console.error(err);
       setPinError('Something went wrong. Please try again.');
@@ -242,6 +294,56 @@ export default function EditShieldPage({ params }: EditPageProps) {
     }
   }
 
+  async function handlePinReset(e: React.FormEvent) {
+    e.preventDefault();
+    setPinResetError(null);
+
+    if (!newPin || !confirmNewPin) {
+      setPinResetError('Please enter and confirm your new PIN.');
+      return;
+    }
+    if (newPin !== confirmNewPin) {
+      setPinResetError('PINs do not match.');
+      return;
+    }
+    if (newPin.length < 4 || newPin.length > 10) {
+      setPinResetError('PIN must be 4-10 characters.');
+      return;
+    }
+
+    setPinResetStatus('saving');
+
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        setPinResetError('Session expired. Please sign in again.');
+        setPinResetStatus('error');
+        return;
+      }
+
+      const res = await fetch('/api/shield/reset-pin', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({ shieldId, newPin }),
+      });
+
+      if (!res.ok) {
+        const body = await res.json();
+        setPinResetError(body.error || 'Failed to reset PIN.');
+        setPinResetStatus('error');
+        return;
+      }
+
+      setPinResetStatus('success');
+    } catch {
+      setPinResetError('Something went wrong. Please try again.');
+      setPinResetStatus('error');
+    }
+  }
+
   return (
     <main className="min-h-screen flex items-center justify-center bg-slate-900 px-4 py-6">
       <div className="w-full max-w-md rounded-2xl bg-slate-950/90 border border-slate-700 shadow-xl px-6 py-7 space-y-5">
@@ -283,6 +385,15 @@ export default function EditShieldPage({ params }: EditPageProps) {
             >
               {loading ? 'Verifying…' : 'Unlock'}
             </button>
+
+            {isClaimed && (
+              <Link
+                href={`/account/login?recover=${shieldId}`}
+                className="block text-xs text-center text-slate-400 hover:text-slate-200 underline underline-offset-2"
+              >
+                Forgot PIN? Recover via email
+              </Link>
+            )}
           </form>
         ) : (
           <form onSubmit={handleSave} className="space-y-4">
@@ -433,6 +544,83 @@ export default function EditShieldPage({ params }: EditPageProps) {
                   className="block w-full text-center rounded-lg border border-slate-700 bg-slate-900/60 px-4 py-2 text-sm font-semibold text-slate-100 hover:bg-slate-800"
                 >
                   View Public Profile
+                </Link>
+              </div>
+            )}
+
+            {!isClaimed && (
+              <div className="pt-3 border-t border-slate-800 space-y-3">
+                <div className="rounded-xl border border-slate-700 bg-slate-800/50 p-4 space-y-2">
+                  <p className="text-sm font-semibold text-slate-200">
+                    Claim this shield to your account
+                  </p>
+                  <p className="text-xs text-slate-400 leading-relaxed">
+                    Link this shield to an email account to manage it from a dashboard,
+                    recover your PIN if you forget it, and manage multiple shields in one place.
+                  </p>
+                </div>
+
+                <Link
+                  href={`/claim/${shieldId}`}
+                  className="block w-full text-center rounded-lg border border-slate-600 bg-slate-900/60 px-4 py-2 text-sm font-semibold text-slate-100 hover:bg-slate-800"
+                >
+                  Claim to Account
+                </Link>
+              </div>
+            )}
+
+            {isOwner && (
+              <div className="pt-3 border-t border-slate-800 space-y-3">
+                {!showPinReset ? (
+                  <button
+                    type="button"
+                    onClick={() => setShowPinReset(true)}
+                    className="block w-full text-center text-xs text-slate-400 hover:text-slate-200 underline underline-offset-2"
+                  >
+                    Reset Edit PIN
+                  </button>
+                ) : pinResetStatus === 'success' ? (
+                  <div className="rounded-xl border border-emerald-500/40 bg-emerald-500/10 p-4 text-center">
+                    <p className="text-sm text-emerald-100">PIN reset successfully.</p>
+                    <p className="mt-1 text-xs text-slate-400">Save your new PIN somewhere safe.</p>
+                  </div>
+                ) : (
+                  <form onSubmit={handlePinReset} className="space-y-3">
+                    <p className="text-xs font-semibold text-slate-300">Reset Edit PIN</p>
+
+                    <input
+                      type="password"
+                      value={newPin}
+                      onChange={(e) => setNewPin(e.target.value)}
+                      className={inputClassName}
+                      placeholder="New PIN"
+                    />
+
+                    <input
+                      type="password"
+                      value={confirmNewPin}
+                      onChange={(e) => setConfirmNewPin(e.target.value)}
+                      className={inputClassName}
+                      placeholder="Confirm New PIN"
+                    />
+
+                    {pinResetError && <p className="text-sm text-red-400">{pinResetError}</p>}
+
+                    <button
+                      type="submit"
+                      disabled={pinResetStatus === 'saving'}
+                      className="w-full bg-slate-700 hover:bg-slate-600 text-white rounded-lg py-2 text-sm font-semibold disabled:opacity-60 transition"
+                    >
+                      {pinResetStatus === 'saving' ? 'Resetting…' : 'Reset PIN'}
+                    </button>
+                  </form>
+                )}
+
+                <Link
+                  href="/account"
+                  className="block text-xs text-center text-slate-400 hover:text-slate-200 underline underline-offset-2"
+                >
+                  Go to My Account
                 </Link>
               </div>
             )}
