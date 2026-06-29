@@ -39,14 +39,16 @@ export default function LoginPage() {
 
     setStatus('sending');
 
-    let redirectTo = `${window.location.origin}/account`;
-    if (recover) redirectTo = `${window.location.origin}/edit/${recover}?recover=true`;
-    if (claimShield) redirectTo = `${window.location.origin}/claim/${claimShield}?verified=true`;
-    if (redirect) redirectTo = `${window.location.origin}${redirect}`;
+    let finalDest = '/account';
+    if (recover) finalDest = `/edit/${recover}?recover=true`;
+    if (claimShield) finalDest = `/claim/${claimShield}?verified=true`;
+    if (redirect) finalDest = redirect;
+
+    const callbackUrl = `${window.location.origin}/auth/callback?next=${encodeURIComponent(finalDest)}`;
 
     const { error: authError } = await supabase.auth.signInWithOtp({
       email,
-      options: { emailRedirectTo: redirectTo },
+      options: { emailRedirectTo: callbackUrl },
     });
 
     if (authError) {
