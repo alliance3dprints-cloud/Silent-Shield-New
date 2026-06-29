@@ -102,6 +102,7 @@ export default function EditShieldPage({ params }: EditPageProps) {
   const [criticalNotes, setCriticalNotes] = useState('');
   const [emergencyInstructions, setEmergencyInstructions] = useState('');
 
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isOwner, setIsOwner] = useState(false);
   const [isClaimed, setIsClaimed] = useState(false);
   const [showPinReset, setShowPinReset] = useState(false);
@@ -118,6 +119,7 @@ export default function EditShieldPage({ params }: EditPageProps) {
     async function checkOwnership() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
+      setIsLoggedIn(true);
 
       const { data: ownership } = await supabase
         .from('shield_owners')
@@ -361,6 +363,15 @@ export default function EditShieldPage({ params }: EditPageProps) {
         <p className="text-center text-xs text-slate-400 mt-1">
           Shield ID: <span className="font-mono text-slate-200">{shieldId}</span>
         </p>
+
+        {isLoggedIn && (
+          <Link
+            href="/account"
+            className="block text-center rounded-lg border border-slate-700 bg-slate-900/60 px-4 py-2 text-sm font-semibold text-slate-100 hover:bg-slate-800"
+          >
+            Dashboard
+          </Link>
+        )}
 
         {!verified ? (
           <form onSubmit={handleVerifyPin} className="space-y-4">

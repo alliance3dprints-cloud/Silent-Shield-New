@@ -588,12 +588,20 @@ export default async function PublicShieldPage({ params }: PublicPageProps) {
             Profile maintained by owner/caregiver. In an emergency, call 911 or follow local emergency protocols.
           </p>
 
-          <Link
-            href={`/edit/${shieldId}`}
-            className="text-xs text-slate-400 hover:text-slate-200 underline underline-offset-2"
-          >
-            Update this profile
-          </Link>
+          <div className="flex justify-center gap-4">
+            <Link
+              href={`/edit/${shieldId}`}
+              className="text-xs text-slate-400 hover:text-slate-200 underline underline-offset-2"
+            >
+              Update this profile
+            </Link>
+            <Link
+              href="/account"
+              className="text-xs text-slate-400 hover:text-slate-200 underline underline-offset-2"
+            >
+              My Account
+            </Link>
+          </div>
         </footer>
       </div>
     </main>
