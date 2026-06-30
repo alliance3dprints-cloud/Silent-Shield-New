@@ -24,19 +24,19 @@ export async function sendEmailNotification({
   const { error } = await resend.emails.send({
     from: `Silent Shield Alerts <${from}>`,
     to,
-    subject: `Your Silent Shield was scanned — ${shieldName}`,
+    subject: `Silent Shield scanned: ${shieldName}`,
     html: `
       <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:24px;color:#1e293b;">
         <p style="font-size:11px;font-weight:700;letter-spacing:0.15em;text-transform:uppercase;color:#ef4444;margin:0 0 16px;">
-          Silent Shield Alert
+          Silent Shield Scan Alert
         </p>
 
         <h1 style="font-size:22px;font-weight:700;margin:0 0 8px;">
-          Your shield was scanned
+          Someone viewed ${shieldName}'s profile
         </h1>
 
         <p style="font-size:14px;color:#475569;margin:0 0 24px;">
-          Someone tapped or scanned your Silent Shield and viewed the emergency profile.
+          This is your scan notification. Someone tapped the Silent Shield NFC tag and viewed the emergency profile.
         </p>
 
         <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:16px;margin-bottom:24px;">
@@ -49,7 +49,7 @@ export async function sendEmailNotification({
         </div>
 
         <p style="font-size:12px;color:#94a3b8;margin:0 0 4px;">
-          If this was unexpected, ensure the correct person is carrying this shield.
+          If you weren't expecting this scan, make sure the right person is wearing this shield.
         </p>
 
         <p style="font-size:11px;color:#cbd5e1;margin:24px 0 0;border-top:1px solid #e2e8f0;padding-top:16px;">

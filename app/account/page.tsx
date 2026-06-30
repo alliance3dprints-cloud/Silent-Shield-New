@@ -42,6 +42,7 @@ export default function AccountPage() {
   const [shields, setShields] = useState<ClaimedShield[]>([]);
   const [notifPrefs, setNotifPrefs] = useState<NotifPrefs>({});
   const [savingPref, setSavingPref] = useState<string | null>(null);
+  const [savedPref, setSavedPref] = useState<string | null>(null);
 
   useEffect(() => {
     async function load() {
@@ -123,6 +124,8 @@ export default function AccountPage() {
 
     if (res.ok) {
       setNotifPrefs((prev) => ({ ...prev, [shieldId]: next }));
+      setSavedPref(shieldId);
+      setTimeout(() => setSavedPref((p) => (p === shieldId ? null : p)), 2000);
     }
     setSavingPref(null);
   }
@@ -155,10 +158,10 @@ export default function AccountPage() {
           </p>
 
           {shields.length === 0 ? (
-            <div className="rounded-xl border border-slate-700 bg-slate-800/70 p-6 text-center space-y-3">
-              <p className="text-sm text-slate-300">No shields claimed yet.</p>
-              <p className="text-xs text-slate-500">
-                To claim a shield, go to its edit page and use the "Claim to Account" option.
+            <div className="rounded-xl border border-slate-700 bg-slate-800/70 p-6 text-center space-y-2">
+              <p className="text-sm font-semibold text-slate-200">No shields claimed yet</p>
+              <p className="text-xs text-slate-400 leading-relaxed">
+                Tap any Silent Shield with your phone, then tap <span className="font-semibold text-slate-200">Edit Profile</span> and claim it to link it here.
               </p>
             </div>
           ) : (
@@ -193,7 +196,7 @@ export default function AccountPage() {
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-semibold text-white truncate">{name}</p>
                         <p className="text-xs text-slate-400">{category}</p>
-                        <p className="text-[10px] text-slate-500 font-mono mt-0.5">
+                        <p className="text-[10px] text-slate-600 font-mono mt-0.5">
                           {item.shield_id}
                         </p>
                       </div>
@@ -226,6 +229,9 @@ export default function AccountPage() {
                       >
                         <span className="text-xs text-slate-400 text-left">
                           Email me when this shield is scanned
+                          <span className="block text-[11px] text-slate-500 mt-0.5">
+                            When someone taps the NFC tag with a phone
+                          </span>
                         </span>
                         <div
                           aria-hidden="true"
@@ -242,6 +248,9 @@ export default function AccountPage() {
                       </button>
                       {saving && (
                         <p className="mt-1 text-[11px] text-slate-400">Saving…</p>
+                      )}
+                      {!saving && savedPref === item.shield_id && (
+                        <p className="mt-1 text-[11px] text-emerald-400">Saved ✓</p>
                       )}
                     </div>
                   </div>

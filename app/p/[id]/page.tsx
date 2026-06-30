@@ -273,11 +273,11 @@ export default async function PublicShieldPage({ params }: PublicPageProps) {
               </p>
               <div>
                 <h1 className="text-3xl font-bold text-white tracking-tight">
-                  Silent Shield
+                  Set Up Your Emergency Profile
                 </h1>
-  
+
                 <p className="mt-2 text-sm text-slate-300">
-                  Let's set up your emergency profile.
+                  Add emergency contacts and medical info. Takes less than 2 minutes.
                 </p>
               </div>
   
@@ -596,16 +596,16 @@ export default async function PublicShieldPage({ params }: PublicPageProps) {
             Profile maintained by owner/caregiver. In an emergency, call 911 or follow local emergency protocols.
           </p>
 
-          <div className="flex justify-center gap-4">
+          <div className="flex justify-center gap-2 flex-wrap">
             <Link
               href={`/edit/${shieldId}`}
-              className="text-xs text-slate-400 hover:text-slate-200 underline underline-offset-2"
+              className="inline-flex items-center rounded-lg border border-slate-700 bg-slate-800/60 px-3 py-1.5 text-xs font-semibold text-slate-300 hover:bg-slate-700 hover:text-white transition"
             >
               Update this profile
             </Link>
             <Link
               href="/account"
-              className="text-xs text-slate-400 hover:text-slate-200 underline underline-offset-2"
+              className="inline-flex items-center rounded-lg border border-slate-700 bg-slate-800/60 px-3 py-1.5 text-xs font-semibold text-slate-300 hover:bg-slate-700 hover:text-white transition"
             >
               My Account
             </Link>

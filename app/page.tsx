@@ -57,9 +57,9 @@ export default function HomePage() {
                 1
               </div>
               <div>
-                <p className="text-sm font-semibold text-white">Get a Silent Shield</p>
+                <p className="text-sm font-semibold text-white">Tap your Silent Shield to any phone</p>
                 <p className="text-xs text-slate-400 mt-0.5">
-                  Each shield is an NFC-enabled wearable — a wristband, tag, or card.
+                  Hold the shield near any smartphone. Your profile page opens automatically — no app needed.
                 </p>
               </div>
             </div>
@@ -122,9 +122,6 @@ export default function HomePage() {
           <p className="text-[11px] text-slate-600 leading-relaxed">
             The emergency profile is always free and fully functional.
             No app required. No subscription needed to save a life.
-          </p>
-          <p className="text-[11px] text-slate-700">
-            Silent Shield by Alliance 3D Prints
           </p>
         </footer>
       </div>

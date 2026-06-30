@@ -22,11 +22,12 @@ export default function LoginPage() {
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
       if (user) {
-        const target = redirect || '/account';
+        const claimTarget = claimShield ? `/claim/${claimShield}` : null;
+        const target = claimTarget || redirect || '/account';
         window.location.href = target;
       }
     });
-  }, [redirect]);
+  }, [claimShield, redirect]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -68,10 +69,10 @@ export default function LoginPage() {
     : 'Sign In to Silent Shield';
 
   const subtitle = recover
-    ? 'We\'ll send a link to verify you own this shield so you can reset your PIN.'
+    ? "We'll send a link to verify you own this shield so you can reset your PIN."
     : claimShield
-    ? 'We\'ll send a link to verify your email and claim this shield.'
-    : 'Enter your email to receive a sign-in link.';
+    ? "We'll send a link to verify your email and link this shield to your account."
+    : "Enter your email and we'll send you a sign-in link. No password needed — an account is created automatically if you don't have one.";
 
   return (
     <main className="min-h-screen flex items-center justify-center bg-slate-900 px-4 py-6">
@@ -89,25 +90,23 @@ export default function LoginPage() {
 
         {status === 'sent' ? (
           <div className="space-y-4">
-            <div className="rounded-xl border border-emerald-500/40 bg-emerald-500/10 p-4 text-center">
-              <p className="text-sm text-emerald-100">
-                Check your email for a sign-in link.
+            <div className="rounded-xl border border-emerald-500/40 bg-emerald-500/10 p-5 text-center space-y-2">
+              <p className="text-base font-semibold text-emerald-100">Check your inbox</p>
+              <p className="text-sm text-slate-300">
+                We sent a sign-in link to{' '}
+                <span className="font-semibold text-white">{email}</span>
               </p>
-              <p className="mt-2 text-xs text-slate-400">
-                Sent to <span className="font-semibold text-slate-200">{email}</span>
+              <p className="text-xs text-slate-400 leading-relaxed">
+                Tap the link in the email to sign in. If you don't see it, check your spam folder.
               </p>
             </div>
 
-            <p className="text-xs text-slate-500 text-center">
-              The link expires in 15 minutes. Check your spam folder if you don't see it.
-            </p>
-
             <button
               type="button"
-              onClick={() => setStatus('idle')}
-              className="block w-full text-center text-xs text-slate-400 hover:text-slate-200 underline underline-offset-2"
+              onClick={() => { setStatus('idle'); setError(null); }}
+              className="block w-full text-center text-sm text-slate-400 hover:text-slate-200 underline underline-offset-2"
             >
-              Use a different email
+              Resend or use a different email
             </button>
           </div>
         ) : (

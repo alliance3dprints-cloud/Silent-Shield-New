@@ -112,9 +112,9 @@ export default function ClaimShieldPage({ params }: ClaimPageProps) {
 
             <Link
               href={`/edit/${shieldId}`}
-              className="block w-full text-center rounded-lg border border-slate-700 bg-slate-900/60 px-4 py-2 text-sm font-semibold text-slate-100 hover:bg-slate-800"
+              className="block text-center text-xs text-slate-400 hover:text-slate-200 underline underline-offset-2"
             >
-              Edit This Shield
+              Edit this shield
             </Link>
           </div>
         </div>

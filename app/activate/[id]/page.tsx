@@ -79,6 +79,7 @@ export default function ActivateShieldPage({ params }: ActivatePageProps) {
   const [status, setStatus] =
     useState<'idle' | 'activating' | 'success' | 'error'>('idle');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   function handlePhotoChange(file: File | null) {
     setPhotoFile(file);
@@ -181,6 +182,7 @@ export default function ActivateShieldPage({ params }: ActivatePageProps) {
         return;
       }
 
+      supabase.auth.getUser().then(({ data: { user } }) => setIsLoggedIn(!!user));
       setStatus('success');
     } catch (err) {
       console.error(err);
@@ -259,12 +261,21 @@ export default function ActivateShieldPage({ params }: ActivatePageProps) {
               View & Test My Silent Shield
             </button>
 
-            <a
-              href={`/account/login?claim=${shieldId}`}
-              className="block w-full text-center rounded-xl border border-slate-700 bg-slate-900/60 py-3 text-sm font-semibold text-slate-200 hover:bg-slate-800 transition"
-            >
-              Create Account & Claim This Shield
-            </a>
+            {isLoggedIn ? (
+              <a
+                href={`/claim/${shieldId}`}
+                className="block w-full text-center rounded-xl border border-emerald-500/40 bg-emerald-500/10 py-3 text-sm font-semibold text-emerald-200 hover:bg-emerald-500/20 transition"
+              >
+                Claim This Shield to My Account →
+              </a>
+            ) : (
+              <a
+                href={`/account/login?claim=${shieldId}`}
+                className="block w-full text-center rounded-xl border border-slate-700 bg-slate-900/60 py-3 text-sm font-semibold text-slate-200 hover:bg-slate-800 transition"
+              >
+                Create Account &amp; Claim This Shield
+              </a>
+            )}
 
             <p className="text-[11px] text-slate-400 leading-relaxed">
               Claiming links this shield to your account so you can manage it from a dashboard,
@@ -287,7 +298,7 @@ export default function ActivateShieldPage({ params }: ActivatePageProps) {
         </div>
 
         <h1 className="mt-3 text-center text-3xl font-bold text-white tracking-tight">
-          Silent Shield
+          Set Up Your Emergency Profile
         </h1>
 
         <p className="text-center text-xs text-slate-400 mt-1">
@@ -468,13 +479,16 @@ export default function ActivateShieldPage({ params }: ActivatePageProps) {
           </Section>
 
           <Section title="Create an Edit PIN">
-            <p className="text-[11px] text-slate-400">
-              Keep this PIN somewhere safe. You will need it to edit this profile later.
+            <p className="text-sm text-slate-300">
+              Choose a PIN you'll remember — you'll need it to edit this profile later.
+            </p>
+            <p className="text-[11px] text-slate-400 leading-relaxed">
+              4–10 characters. Letters and numbers are fine. After claiming this shield to your account, you can recover it by email if you forget it.
             </p>
 
             <input
               type="password"
-              placeholder="Choose PIN"
+              placeholder="Choose PIN (4–10 characters)"
               value={pin}
               onChange={(e) => setPin(e.target.value)}
               className={inputClassName}
