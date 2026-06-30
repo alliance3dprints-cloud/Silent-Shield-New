@@ -4,6 +4,7 @@ export const dynamic = 'force-dynamic';
 import { headers } from 'next/headers';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabaseClient';
+import { AddressReveal } from './AddressReveal';
 
 type PublicPageProps = {
   params: { id: string };
@@ -382,11 +383,24 @@ export default async function PublicShieldPage({ params }: PublicPageProps) {
           </div>
 
           <div>
+            {alertBadges.length > 0 && (
+              <div className="flex flex-wrap justify-center gap-2 mb-4">
+                {alertBadges.map((badge) => (
+                  <span
+                    key={badge}
+                    className="px-3 py-1.5 rounded-lg text-xs font-black tracking-[0.16em] uppercase bg-red-500 text-white shadow-lg shadow-red-500/20"
+                  >
+                    {badge}
+                  </span>
+                ))}
+              </div>
+            )}
+
             <h1 className="text-3xl font-bold text-white tracking-tight">
               {data.Name || 'Emergency Profile'}
             </h1>
 
-            <p className="mt-1 text-xs text-slate-500 tracking-wide">
+            <p className="mt-1 text-xs text-slate-400 tracking-wide">
               Silent Shield Emergency ID
             </p>
 
@@ -407,22 +421,9 @@ export default async function PublicShieldPage({ params }: PublicPageProps) {
                 </span>
               )}
             </div>
-
-            {alertBadges.length > 0 && (
-              <div className="mt-4 flex flex-wrap justify-center gap-2">
-                {alertBadges.map((badge) => (
-                  <span
-                    key={badge}
-                    className="px-3 py-1.5 rounded-lg text-xs font-black tracking-[0.16em] uppercase bg-red-500 text-white shadow-lg shadow-red-500/20"
-                  >
-                    {badge}
-                  </span>
-                ))}
-              </div>
-            )}
           </div>
 
-          <p className="text-[11px] text-slate-500">
+          <p className="text-[11px] text-slate-400">
             Shield ID: <span className="font-mono text-slate-300">{shieldId}</span>
           </p>
         </section>
@@ -488,11 +489,8 @@ export default async function PublicShieldPage({ params }: PublicPageProps) {
             <h2 className="text-sm font-bold text-slate-300 uppercase tracking-[0.18em]">
               Address on File
             </h2>
-
             <div className="rounded-xl border border-slate-700 bg-slate-800/70 p-4">
-              <p className="text-sm leading-relaxed whitespace-pre-line">
-                {data.Address}
-              </p>
+              <AddressReveal address={data.Address} />
             </div>
           </section>
         )}
@@ -588,10 +586,10 @@ export default async function PublicShieldPage({ params }: PublicPageProps) {
         </section>
 
         <footer className="p-5 text-center space-y-3">
-          <p className="text-xs text-slate-500">Silent Shield Emergency ID</p>
+          <p className="text-xs text-slate-400">Silent Shield Emergency ID</p>
 
           {lastUpdated && (
-            <p className="text-xs text-slate-500">Last updated: {lastUpdated}</p>
+            <p className="text-xs text-slate-400">Last updated: {lastUpdated}</p>
           )}
 
           <p className="text-[11px] text-slate-600 leading-relaxed">

@@ -40,7 +40,7 @@ type ShieldRow = {
 };
 
 const inputClassName =
-  'w-full border border-slate-700 bg-slate-900/60 rounded px-3 py-2 text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-red-500/60';
+  'w-full border border-slate-700 bg-slate-900/60 rounded px-3 py-2 text-sm text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-red-500/60';
 
 async function uploadProfilePhoto(shieldId: string, file: File) {
   const fileExt = file.name.split('.').pop() || 'jpg';
@@ -215,7 +215,7 @@ export default function EditShieldPage({ params }: EditPageProps) {
 
       if (!res.ok) {
         const body = await res.json();
-        setPinError(res.status === 401 ? 'Incorrect PIN.' : (body.error || 'Shield not found.'));
+        setPinError(res.status === 401 ? 'Incorrect PIN. Please try again, or use "Forgot PIN?" below to recover access.' : (body.error || 'Shield not found. Check the Shield ID and try again.'));
         setLoading(false);
         return;
       }
@@ -225,7 +225,7 @@ export default function EditShieldPage({ params }: EditPageProps) {
       setVerified(true);
     } catch (err) {
       console.error(err);
-      setPinError('Something went wrong. Please try again.');
+      setPinError('Could not verify your PIN. Please check your connection and try again.');
     }
 
     setLoading(false);
@@ -283,7 +283,7 @@ export default function EditShieldPage({ params }: EditPageProps) {
       if (error) {
         console.error(error);
         setSaveStatus('error');
-        setSaveError('Failed to save changes. Please try again.');
+        setSaveError('Failed to save changes. Please check your connection and try again.');
         return;
       }
 
@@ -292,7 +292,7 @@ export default function EditShieldPage({ params }: EditPageProps) {
     } catch (err) {
       console.error(err);
       setSaveStatus('error');
-      setSaveError('Failed to upload photo or save changes. Please try again.');
+      setSaveError('Failed to upload photo or save changes. Please check your connection and try again. If the issue persists, try a smaller photo.');
     }
   }
 
@@ -408,6 +408,24 @@ export default function EditShieldPage({ params }: EditPageProps) {
           </form>
         ) : (
           <form onSubmit={handleSave} className="space-y-4">
+            {!isClaimed && !isOwner && (
+              <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-4 space-y-2">
+                <p className="text-sm font-semibold text-emerald-200">
+                  Want to manage this shield from your account?
+                </p>
+                <p className="text-xs text-slate-400 leading-relaxed">
+                  Claim this shield to recover your PIN by email, get scan notifications,
+                  and manage all your shields in one place.
+                </p>
+                <Link
+                  href={`/claim/${shieldId}`}
+                  className="inline-block mt-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 px-4 py-2 text-xs font-semibold text-white transition"
+                >
+                  Claim This Shield →
+                </Link>
+              </div>
+            )}
+
             <Section title="Profile Information">
               <FieldLabel label="Category">
                 <select
@@ -559,26 +577,6 @@ export default function EditShieldPage({ params }: EditPageProps) {
               </div>
             )}
 
-            {!isClaimed && (
-              <div className="pt-3 border-t border-slate-800 space-y-3">
-                <div className="rounded-xl border border-slate-700 bg-slate-800/50 p-4 space-y-2">
-                  <p className="text-sm font-semibold text-slate-200">
-                    Claim this shield to your account
-                  </p>
-                  <p className="text-xs text-slate-400 leading-relaxed">
-                    Link this shield to an email account to manage it from a dashboard,
-                    recover your PIN if you forget it, and manage multiple shields in one place.
-                  </p>
-                </div>
-
-                <Link
-                  href={`/claim/${shieldId}`}
-                  className="block w-full text-center rounded-lg border border-slate-600 bg-slate-900/60 px-4 py-2 text-sm font-semibold text-slate-100 hover:bg-slate-800"
-                >
-                  Claim to Account
-                </Link>
-              </div>
-            )}
 
             {isOwner && (
               <div className="pt-3 border-t border-slate-800 space-y-3">
@@ -665,12 +663,10 @@ function FieldLabel({
   children: React.ReactNode;
 }) {
   return (
-    <div>
-      <label className="block text-xs font-semibold mb-1 text-slate-200">
-        {label}
-      </label>
+    <label className="block">
+      <span className="block text-xs font-semibold mb-1 text-slate-200">{label}</span>
       {children}
-    </div>
+    </label>
   );
 }
 

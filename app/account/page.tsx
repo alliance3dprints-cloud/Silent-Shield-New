@@ -215,27 +215,34 @@ export default function AccountPage() {
                     </div>
 
                     <div className="border-t border-slate-700 pt-3">
-                      <label className="flex items-center justify-between gap-3 cursor-pointer">
-                        <span className="text-xs text-slate-400">
+                      <button
+                        type="button"
+                        role="switch"
+                        aria-checked={emailOn}
+                        aria-label={`${emailOn ? 'Disable' : 'Enable'} email notifications for ${shield?.Name || 'this shield'}`}
+                        disabled={saving}
+                        onClick={() => toggleEmailNotif(item.shield_id, emailOn)}
+                        className="flex w-full items-center justify-between gap-3 py-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500/60 rounded"
+                      >
+                        <span className="text-xs text-slate-400 text-left">
                           Email me when this shield is scanned
                         </span>
-                        <button
-                          type="button"
-                          role="switch"
-                          aria-checked={emailOn}
-                          disabled={saving}
-                          onClick={() => toggleEmailNotif(item.shield_id, emailOn)}
-                          className={`relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors disabled:opacity-50 ${
+                        <div
+                          aria-hidden="true"
+                          className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors ${
                             emailOn ? 'bg-red-500' : 'bg-slate-600'
-                          }`}
+                          } ${saving ? 'opacity-50' : ''}`}
                         >
                           <span
-                            className={`inline-block h-3.5 w-3.5 rounded-full bg-white shadow transition-transform ${
-                              emailOn ? 'translate-x-4' : 'translate-x-1'
+                            className={`inline-block h-4 w-4 rounded-full bg-white shadow transition-transform ${
+                              emailOn ? 'translate-x-6' : 'translate-x-1'
                             }`}
                           />
-                        </button>
-                      </label>
+                        </div>
+                      </button>
+                      {saving && (
+                        <p className="mt-1 text-[11px] text-slate-400">Saving…</p>
+                      )}
                     </div>
                   </div>
                 );

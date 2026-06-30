@@ -36,6 +36,13 @@ export default function HomePage() {
             >
               My Account
             </Link>
+
+            <div className="rounded-xl border border-slate-700 bg-slate-800/50 p-4 text-left space-y-1.5">
+              <p className="text-xs font-semibold text-slate-200">New here? Just got a Silent Shield?</p>
+              <p className="text-xs text-slate-400 leading-relaxed">
+                Tap your Silent Shield to any smartphone to open your profile page, then tap <span className="font-semibold text-slate-200">Edit Profile</span> to set up your emergency information. Takes less than 2 minutes.
+              </p>
+            </div>
           </div>
         </section>
 

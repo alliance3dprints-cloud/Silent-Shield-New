@@ -10,7 +10,7 @@ type ClaimPageProps = {
 };
 
 const inputClassName =
-  'w-full border border-slate-700 bg-slate-900/60 rounded px-3 py-2 text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-red-500/60';
+  'w-full border border-slate-700 bg-slate-900/60 rounded px-3 py-2 text-sm text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-red-500/60';
 
 export default function ClaimShieldPage({ params }: ClaimPageProps) {
   const shieldId = params.id;
@@ -63,14 +63,14 @@ export default function ClaimShieldPage({ params }: ClaimPageProps) {
       const body = await res.json();
 
       if (!res.ok) {
-        setError(body.error || 'Failed to claim shield.');
+        setError(body.error === 'Incorrect PIN' ? 'Incorrect PIN. Please try again.' : body.error || 'Failed to claim shield. Please try again.');
         setStatus('error');
         return;
       }
 
       setStatus('success');
     } catch {
-      setError('Something went wrong. Please try again.');
+      setError('Could not claim shield. Please check your connection and try again.');
       setStatus('error');
     }
   }
@@ -147,7 +147,7 @@ export default function ClaimShieldPage({ params }: ClaimPageProps) {
 
         <form onSubmit={handleClaim} className="space-y-4">
           <p className="text-sm text-slate-400 text-center">
-            Enter your edit PIN to prove you own this shield.
+            Enter your PIN to link this shield to your account.
           </p>
 
           <input

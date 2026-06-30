@@ -9,7 +9,7 @@ type ActivatePageProps = {
 };
 
 const inputClassName =
-  'w-full border border-slate-700 bg-slate-900/60 rounded px-3 py-2 text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-red-500/60';
+  'w-full border border-slate-700 bg-slate-900/60 rounded px-3 py-2 text-sm text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-red-500/60';
 
 async function hashPin(pin: string): Promise<string> {
   const enc = new TextEncoder();
@@ -172,11 +172,11 @@ export default function ActivateShieldPage({ params }: ActivatePageProps) {
       if (error) {
         if (error.message.includes('duplicate key') || error.code === '23505') {
           setStatus('error');
-          setErrorMessage('This Silent Shield has already been activated.');
+          setErrorMessage('This Silent Shield has already been activated. Go to the edit page to update your profile.');
         } else {
           console.error(error);
           setStatus('error');
-          setErrorMessage('Something went wrong activating this Silent Shield.');
+          setErrorMessage('Activation failed. Please check your connection and try again. If this keeps happening, contact support@alliance3dprints.com.');
         }
         return;
       }
@@ -185,7 +185,7 @@ export default function ActivateShieldPage({ params }: ActivatePageProps) {
     } catch (err) {
       console.error(err);
       setStatus('error');
-      setErrorMessage('Unexpected error. Please try again.');
+      setErrorMessage('Activation failed. Please check your connection and try again. If this keeps happening, contact support@alliance3dprints.com.');
     }
   }
 
@@ -246,17 +246,31 @@ export default function ActivateShieldPage({ params }: ActivatePageProps) {
             </p>
           </div>
   
-          <button
-            type="button"
-            onClick={() => {
-              if (typeof window !== 'undefined') {
-                window.location.href = `/p/${shieldId}`;
-              }
-            }}
-            className="w-full bg-red-500 hover:bg-red-600 text-white rounded-xl py-3 text-sm font-bold transition shadow-lg shadow-red-500/20"
-          >
-            View & Test My Silent Shield
-          </button>
+          <div className="space-y-3">
+            <button
+              type="button"
+              onClick={() => {
+                if (typeof window !== 'undefined') {
+                  window.location.href = `/p/${shieldId}`;
+                }
+              }}
+              className="w-full bg-red-500 hover:bg-red-600 text-white rounded-xl py-3 text-sm font-bold transition shadow-lg shadow-red-500/20"
+            >
+              View & Test My Silent Shield
+            </button>
+
+            <a
+              href={`/account/login?claim=${shieldId}`}
+              className="block w-full text-center rounded-xl border border-slate-700 bg-slate-900/60 py-3 text-sm font-semibold text-slate-200 hover:bg-slate-800 transition"
+            >
+              Create Account & Claim This Shield
+            </a>
+
+            <p className="text-[11px] text-slate-400 leading-relaxed">
+              Claiming links this shield to your account so you can manage it from a dashboard,
+              get scan notifications, and recover your PIN if you forget it.
+            </p>
+          </div>
         </div>
       </main>
     );
@@ -569,12 +583,10 @@ function FieldLabel({
   children: React.ReactNode;
 }) {
   return (
-    <div>
-      <label className="block text-xs font-semibold mb-1 text-slate-200">
-        {label}
-      </label>
+    <label className="block">
+      <span className="block text-xs font-semibold mb-1 text-slate-200">{label}</span>
       {children}
-    </div>
+    </label>
   );
 }
 

@@ -53,8 +53,9 @@ export async function sendEmailNotification({
         </p>
 
         <p style="font-size:11px;color:#cbd5e1;margin:24px 0 0;border-top:1px solid #e2e8f0;padding-top:16px;">
-          You are receiving this because you have scan notifications enabled for this shield.
-          Sign in to <a href="https://silentshield.com/account" style="color:#ef4444;">My Account</a> to manage your preferences.
+          You are receiving this because you have scan notifications enabled for this shield.<br/>
+          <a href="https://silentshield.app/account" style="color:#ef4444;">Manage notification preferences</a> &nbsp;·&nbsp;
+          <a href="mailto:support@alliance3dprints.com?subject=Unsubscribe%20from%20scan%20alerts&body=Please%20unsubscribe%20me%20from%20scan%20notifications%20for%20shield%20${shieldId}." style="color:#94a3b8;">Unsubscribe</a>
         </p>
       </div>
     `,
