@@ -133,7 +133,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={status === 'sending'}
-              className="w-full bg-red-500 hover:bg-red-600 text-white rounded-lg py-2.5 text-sm font-semibold disabled:opacity-60 transition"
+              className="w-full bg-red-500 hover:bg-red-600 text-white rounded-xl py-2.5 text-sm font-semibold disabled:opacity-60 transition"
             >
               {status === 'sending' ? 'Sending…' : 'Send Sign-In Link'}
             </button>

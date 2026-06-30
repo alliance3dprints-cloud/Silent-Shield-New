@@ -197,7 +197,9 @@ export default function ActivateShieldPage({ params }: ActivatePageProps) {
         <div className="w-full max-w-md rounded-2xl bg-gradient-to-b from-slate-900 via-slate-950 to-black border border-emerald-500/40 shadow-2xl px-6 py-7 space-y-6 text-slate-100 text-center">
           <div className="space-y-3">
             <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-emerald-500/10 border border-emerald-500/40">
-              <span className="text-3xl text-emerald-300">✓</span>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="h-8 w-8 text-emerald-300" aria-hidden="true">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+              </svg>
             </div>
   
             <p className="text-[11px] font-semibold tracking-[0.22em] text-emerald-300 uppercase">
@@ -278,7 +280,7 @@ export default function ActivateShieldPage({ params }: ActivatePageProps) {
             )}
 
             <p className="text-[11px] text-slate-400 leading-relaxed">
-              Claiming links this shield to your account so you can manage it from a dashboard,
+              Claiming links this shield to your account so you can manage it from My Account,
               get scan notifications, and recover your PIN if you forget it.
             </p>
           </div>
@@ -306,6 +308,8 @@ export default function ActivateShieldPage({ params }: ActivatePageProps) {
         </p>
 
         <form onSubmit={handleSubmit} className="space-y-4">
+          <p className="text-[11px] text-slate-500 text-right">All fields are optional except PIN</p>
+
           <Section title="Profile Information">
             <FieldLabel label="Category">
               <select
@@ -508,8 +512,9 @@ export default function ActivateShieldPage({ params }: ActivatePageProps) {
           <button
             type="submit"
             disabled={status === 'activating'}
-            className="w-full mt-3 bg-red-500 hover:bg-red-600 text-white rounded-lg py-2.5 text-sm font-semibold disabled:opacity-60 transition"
+            className="w-full mt-3 bg-red-500 hover:bg-red-600 text-white rounded-xl py-2.5 text-sm font-semibold disabled:opacity-60 transition inline-flex items-center justify-center gap-2"
           >
+            {status === 'activating' && <Spinner />}
             {status === 'activating' ? 'Activating…' : 'Activate Shield'}
           </button>
         </form>
@@ -571,6 +576,15 @@ export default function ActivateShieldPage({ params }: ActivatePageProps) {
         </div>
       )}
     </main>
+  );
+}
+
+function Spinner() {
+  return (
+    <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+    </svg>
   );
 }
 

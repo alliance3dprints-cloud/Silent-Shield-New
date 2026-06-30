@@ -369,7 +369,7 @@ export default function EditShieldPage({ params }: EditPageProps) {
             href="/account"
             className="block text-center rounded-lg border border-slate-700 bg-slate-900/60 px-4 py-2 text-sm font-semibold text-slate-100 hover:bg-slate-800"
           >
-            Dashboard
+            My Account
           </Link>
         )}
 
@@ -392,8 +392,9 @@ export default function EditShieldPage({ params }: EditPageProps) {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-red-500 hover:bg-red-600 text-white rounded-lg py-2.5 text-sm font-semibold disabled:opacity-60 transition"
+              className="w-full bg-red-500 hover:bg-red-600 text-white rounded-xl py-2.5 text-sm font-semibold disabled:opacity-60 transition inline-flex items-center justify-center gap-2"
             >
+              {loading && <Spinner />}
               {loading ? 'Verifying…' : 'Unlock'}
             </button>
 
@@ -425,6 +426,8 @@ export default function EditShieldPage({ params }: EditPageProps) {
                 </Link>
               </div>
             )}
+
+            <p className="text-[11px] text-slate-500 text-right">All fields are optional except PIN</p>
 
             <Section title="Profile Information">
               <FieldLabel label="Category">
@@ -557,8 +560,9 @@ export default function EditShieldPage({ params }: EditPageProps) {
             <button
               type="submit"
               disabled={saveStatus === 'saving'}
-              className="w-full mt-3 bg-red-500 hover:bg-red-600 text-white rounded-lg py-2.5 text-sm font-semibold disabled:opacity-60 transition"
+              className="w-full mt-3 bg-red-500 hover:bg-red-600 text-white rounded-xl py-2.5 text-sm font-semibold disabled:opacity-60 transition inline-flex items-center justify-center gap-2"
             >
+              {saveStatus === 'saving' && <Spinner />}
               {saveStatus === 'saving' ? 'Saving…' : 'Save Changes'}
             </button>
 
@@ -637,6 +641,15 @@ export default function EditShieldPage({ params }: EditPageProps) {
         )}
       </div>
     </main>
+  );
+}
+
+function Spinner() {
+  return (
+    <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+    </svg>
   );
 }
 

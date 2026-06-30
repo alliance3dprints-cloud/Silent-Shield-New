@@ -287,28 +287,28 @@ export default async function PublicShieldPage({ params }: PublicPageProps) {
             <div className="rounded-xl border border-slate-700 bg-slate-900/60 p-5">
   <div className="space-y-3">
     <div className="flex items-center gap-3">
-      <span className="text-emerald-400 font-bold">✓</span>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="h-4 w-4 text-emerald-400 shrink-0" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
       <span className="text-sm text-slate-200">
         Takes less than 2 minutes
       </span>
     </div>
 
     <div className="flex items-center gap-3">
-      <span className="text-emerald-400 font-bold">✓</span>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="h-4 w-4 text-emerald-400 shrink-0" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
       <span className="text-sm text-slate-200">
         Add emergency contacts
       </span>
     </div>
 
     <div className="flex items-center gap-3">
-      <span className="text-emerald-400 font-bold">✓</span>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="h-4 w-4 text-emerald-400 shrink-0" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
       <span className="text-sm text-slate-200">
         Add medical information
       </span>
     </div>
 
     <div className="flex items-center gap-3">
-      <span className="text-emerald-400 font-bold">✓</span>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="h-4 w-4 text-emerald-400 shrink-0" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
       <span className="text-sm text-slate-200">
         Update anytime
       </span>

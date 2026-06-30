@@ -128,7 +128,9 @@ export default function ClaimShieldPage({ params }: ClaimPageProps) {
       <main className="min-h-screen flex items-center justify-center bg-slate-900 px-4 py-6">
         <div className="w-full max-w-md rounded-2xl bg-slate-950/90 border border-emerald-500/40 shadow-xl px-6 py-7 space-y-5 text-center">
           <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-emerald-500/10 border border-emerald-500/40">
-            <span className="text-3xl text-emerald-300">✓</span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="h-8 w-8 text-emerald-300" aria-hidden="true">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+            </svg>
           </div>
 
           <h1 className="text-2xl font-bold text-white">Shield Claimed</h1>
@@ -139,7 +141,7 @@ export default function ClaimShieldPage({ params }: ClaimPageProps) {
           </p>
 
           <p className="text-xs text-slate-400 leading-relaxed">
-            Sign in to manage this shield from your account dashboard, view scan notifications, and recover your PIN if you forget it.
+            Sign in to My Account to manage this shield, view scan notifications, and recover your PIN if you forget it.
           </p>
 
           <div className="space-y-3 pt-2">
@@ -229,15 +231,21 @@ export default function ClaimShieldPage({ params }: ClaimPageProps) {
           <button
             type="submit"
             disabled={status === 'claiming'}
-            className="w-full bg-red-500 hover:bg-red-600 text-white rounded-lg py-2.5 text-sm font-semibold disabled:opacity-60 transition"
+            className="w-full bg-red-500 hover:bg-red-600 text-white rounded-xl py-2.5 text-sm font-semibold disabled:opacity-60 transition inline-flex items-center justify-center gap-2"
           >
+            {status === 'claiming' && (
+              <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+              </svg>
+            )}
             {status === 'claiming' ? 'Claiming…' : 'Claim Shield'}
           </button>
 
           <div className="rounded-xl border border-slate-700 bg-slate-800/50 p-3">
             <p className="text-[11px] text-slate-400 leading-relaxed">
               Claiming links this shield to your account. You'll be able to manage it
-              from your dashboard and recover your PIN if you forget it.
+              from My Account and recover your PIN if you forget it.
             </p>
           </div>
         </form>
