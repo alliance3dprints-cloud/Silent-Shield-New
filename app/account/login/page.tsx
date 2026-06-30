@@ -46,7 +46,8 @@ export default function LoginPage() {
     if (redirect) finalDest = redirect;
 
     // Store destination before sending magic link — Supabase may strip ?next= query params
-    sessionStorage.setItem('auth_redirect', finalDest);
+    // Must use localStorage (not sessionStorage) because magic links open in a new tab
+    localStorage.setItem('auth_redirect', finalDest);
 
     const callbackUrl = `${window.location.origin}/auth/callback`;
 

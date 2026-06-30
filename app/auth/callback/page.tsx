@@ -5,11 +5,11 @@ import { useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabaseClient';
 
 function getRedirectTarget(urlNext: string | null): string {
-  // Prefer sessionStorage (set before sending magic link) so query params survive Supabase redirect
+  // localStorage is shared across tabs — magic links open in a new tab so sessionStorage won't work
   try {
-    const stored = sessionStorage.getItem('auth_redirect');
+    const stored = localStorage.getItem('auth_redirect');
     if (stored) {
-      sessionStorage.removeItem('auth_redirect');
+      localStorage.removeItem('auth_redirect');
       return stored;
     }
   } catch {}
