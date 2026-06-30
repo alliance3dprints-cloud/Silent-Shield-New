@@ -16,6 +16,8 @@ type ClaimedShield = {
   } | null;
 };
 
+type NotifPrefs = Record<string, boolean>; // shield_id -> email_enabled
+
 function formatCategory(category?: string | null) {
   const map: Record<string, string> = {
     general: 'General Emergency ID',
@@ -36,7 +38,10 @@ function formatCategory(category?: string | null) {
 export default function AccountPage() {
   const [loading, setLoading] = useState(true);
   const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [userId, setUserId] = useState<string | null>(null);
   const [shields, setShields] = useState<ClaimedShield[]>([]);
+  const [notifPrefs, setNotifPrefs] = useState<NotifPrefs>({});
+  const [savingPref, setSavingPref] = useState<string | null>(null);
 
   useEffect(() => {
     async function load() {
@@ -48,6 +53,7 @@ export default function AccountPage() {
       }
 
       setUserEmail(user.email || null);
+      setUserId(user.id);
 
       const { data, error } = await supabase
         .from('shield_owners')
@@ -59,6 +65,26 @@ export default function AccountPage() {
         console.error(error);
       } else {
         setShields((data as unknown as ClaimedShield[]) || []);
+      }
+
+      // Load notification preferences for all shields
+      const shieldIds = (data || []).map((d: { shield_id: string }) => d.shield_id);
+      if (shieldIds.length > 0) {
+        const { data: prefs } = await supabase
+          .from('notification_preferences')
+          .select('shield_id, email_enabled')
+          .eq('owner_id', user.id)
+          .in('shield_id', shieldIds);
+
+        const prefsMap: NotifPrefs = {};
+        for (const p of prefs || []) {
+          prefsMap[p.shield_id] = p.email_enabled;
+        }
+        // Default to true for shields with no prefs row yet
+        for (const id of shieldIds) {
+          if (!(id in prefsMap)) prefsMap[id] = true;
+        }
+        setNotifPrefs(prefsMap);
       }
 
       setLoading(false);
@@ -77,6 +103,28 @@ export default function AccountPage() {
 
   async function handleSignOut() {
     await supabase.auth.signOut();
+  }
+
+  async function toggleEmailNotif(shieldId: string, current: boolean) {
+    setSavingPref(shieldId);
+    const next = !current;
+
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) { setSavingPref(null); return; }
+
+    const res = await fetch('/api/preferences/notifications', {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${session.access_token}`,
+      },
+      body: JSON.stringify({ shieldId, email_enabled: next }),
+    });
+
+    if (res.ok) {
+      setNotifPrefs((prev) => ({ ...prev, [shieldId]: next }));
+    }
+    setSavingPref(null);
   }
 
   if (loading) {
@@ -108,9 +156,7 @@ export default function AccountPage() {
 
           {shields.length === 0 ? (
             <div className="rounded-xl border border-slate-700 bg-slate-800/70 p-6 text-center space-y-3">
-              <p className="text-sm text-slate-300">
-                No shields claimed yet.
-              </p>
+              <p className="text-sm text-slate-300">No shields claimed yet.</p>
               <p className="text-xs text-slate-500">
                 To claim a shield, go to its edit page and use the "Claim to Account" option.
               </p>
@@ -121,11 +167,13 @@ export default function AccountPage() {
                 const shield = item.shield;
                 const name = shield?.Name || 'Unnamed Shield';
                 const category = formatCategory(shield?.profile_type);
+                const emailOn = notifPrefs[item.shield_id] ?? true;
+                const saving = savingPref === item.shield_id;
 
                 return (
                   <div
                     key={item.shield_id}
-                    className="rounded-xl border border-slate-700 bg-slate-800/70 p-4"
+                    className="rounded-xl border border-slate-700 bg-slate-800/70 p-4 space-y-3"
                   >
                     <div className="flex items-center gap-4">
                       <div className="h-12 w-12 shrink-0 rounded-full border border-slate-600 bg-slate-900 flex items-center justify-center overflow-hidden">
@@ -143,9 +191,7 @@ export default function AccountPage() {
                       </div>
 
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold text-white truncate">
-                          {name}
-                        </p>
+                        <p className="text-sm font-semibold text-white truncate">{name}</p>
                         <p className="text-xs text-slate-400">{category}</p>
                         <p className="text-[10px] text-slate-500 font-mono mt-0.5">
                           {item.shield_id}
@@ -153,7 +199,7 @@ export default function AccountPage() {
                       </div>
                     </div>
 
-                    <div className="mt-3 flex gap-2">
+                    <div className="flex gap-2">
                       <Link
                         href={`/p/${item.shield_id}`}
                         className="flex-1 text-center rounded-lg border border-slate-600 bg-slate-900/60 px-3 py-1.5 text-xs font-semibold text-slate-200 hover:bg-slate-800"
@@ -166,6 +212,30 @@ export default function AccountPage() {
                       >
                         Edit
                       </Link>
+                    </div>
+
+                    <div className="border-t border-slate-700 pt-3">
+                      <label className="flex items-center justify-between gap-3 cursor-pointer">
+                        <span className="text-xs text-slate-400">
+                          Email me when this shield is scanned
+                        </span>
+                        <button
+                          type="button"
+                          role="switch"
+                          aria-checked={emailOn}
+                          disabled={saving}
+                          onClick={() => toggleEmailNotif(item.shield_id, emailOn)}
+                          className={`relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors disabled:opacity-50 ${
+                            emailOn ? 'bg-red-500' : 'bg-slate-600'
+                          }`}
+                        >
+                          <span
+                            className={`inline-block h-3.5 w-3.5 rounded-full bg-white shadow transition-transform ${
+                              emailOn ? 'translate-x-4' : 'translate-x-1'
+                            }`}
+                          />
+                        </button>
+                      </label>
                     </div>
                   </div>
                 );

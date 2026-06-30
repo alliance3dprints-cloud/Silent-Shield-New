@@ -4,6 +4,7 @@ export const dynamic = 'force-dynamic';
 import { headers } from 'next/headers';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabaseClient';
+import { notifyOwners } from '@/lib/notifications';
 
 type PublicPageProps = {
   params: { id: string };
@@ -224,6 +225,8 @@ export default async function PublicShieldPage({ params }: PublicPageProps) {
       .then(({ error: logError }) => {
         if (logError) console.error('Scan log failed:', logError);
       });
+
+    notifyOwners(shieldId, 'scan');
   }
 
   if (!data || data.Activated !== true) {

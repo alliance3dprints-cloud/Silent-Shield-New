@@ -62,6 +62,15 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Failed to claim shield' }, { status: 500 });
     }
 
+    // Seed default notification preferences (email on, sms/push off)
+    await db.from('notification_preferences').upsert({
+      owner_id: user.id,
+      shield_id: shieldId,
+      email_enabled: true,
+      sms_enabled: false,
+      push_enabled: false,
+    });
+
     return NextResponse.json({ message: 'Shield claimed successfully' });
   } catch {
     return NextResponse.json({ error: 'Server error' }, { status: 500 });
