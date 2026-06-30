@@ -4,7 +4,9 @@ export type NotificationStatus =
   | 'sent'
   | 'skipped_rate_limit'
   | 'skipped_disabled'
+  | 'skipped_no_owner'
   | 'skipped_no_subscription'
+  | 'skipped_missing_email_config'
   | 'failed';
 
 export type NotificationChannel = 'email' | 'sms' | 'push';

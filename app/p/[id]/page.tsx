@@ -4,7 +4,6 @@ export const dynamic = 'force-dynamic';
 import { headers } from 'next/headers';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabaseClient';
-import { notifyOwners } from '@/lib/notifications';
 
 type PublicPageProps = {
   params: { id: string };
@@ -226,7 +225,15 @@ export default async function PublicShieldPage({ params }: PublicPageProps) {
         if (logError) console.error('Scan log failed:', logError);
       });
 
-    notifyOwners(shieldId, 'scan');
+    // Fire notification via API route so it runs to completion independent of this response stream
+    const base = process.env.VERCEL_URL
+      ? `https://${process.env.VERCEL_URL}`
+      : process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000';
+    fetch(`${base}/api/shield/notify`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ shieldId }),
+    }).catch(() => {});
   }
 
   if (!data || data.Activated !== true) {
