@@ -15,59 +15,99 @@ const inputClassName =
 export default function ClaimShieldPage({ params }: ClaimPageProps) {
   const shieldId = params.id;
 
-  const [loading, setLoading] = useState(true);
-  const [user, setUser] = useState<{ id: string; email?: string } | null>(null);
+  const [authChecked, setAuthChecked] = useState(false);
+  const [signedInUser, setSignedInUser] = useState<{ id: string; email?: string } | null>(null);
+
+  const [email, setEmail] = useState('');
   const [pinInput, setPinInput] = useState('');
+  const [claimedEmail, setClaimedEmail] = useState('');
   const [status, setStatus] = useState<'idle' | 'claiming' | 'success' | 'error'>('idle');
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data: { user: authUser } }) => {
-      if (!authUser) {
-        window.location.href = `/account/login?claim=${shieldId}`;
-        return;
-      }
-      setUser(authUser);
-      setLoading(false);
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      setSignedInUser(user ?? null);
+      setAuthChecked(true);
     });
-  }, [shieldId]);
+  }, []);
 
   async function handleClaim(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
 
     if (!pinInput) {
-      setError('Please enter your edit PIN to verify ownership.');
+      setError('Please enter your edit PIN.');
+      return;
+    }
+
+    // Authenticated path: use existing session
+    if (signedInUser) {
+      setStatus('claiming');
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) {
+          setError('Session expired. Please sign in again.');
+          setStatus('error');
+          return;
+        }
+
+        const res = await fetch('/api/shield/claim', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify({ shieldId, pin: pinInput }),
+        });
+
+        const body = await res.json();
+
+        if (!res.ok) {
+          setError(
+            body.error === 'Incorrect PIN'
+              ? 'Incorrect PIN. Please try again.'
+              : body.error || 'Failed to claim shield. Please try again.'
+          );
+          setStatus('error');
+          return;
+        }
+
+        setClaimedEmail(signedInUser.email || '');
+        setStatus('success');
+      } catch {
+        setError('Could not claim shield. Please check your connection and try again.');
+        setStatus('error');
+      }
+      return;
+    }
+
+    // Unauthenticated path: email + PIN, service role handles user creation
+    if (!email || !email.includes('@')) {
+      setError('Please enter a valid email address.');
       return;
     }
 
     setStatus('claiming');
-
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        setError('Session expired. Please sign in again.');
-        setStatus('error');
-        return;
-      }
-
-      const res = await fetch('/api/shield/claim', {
+      const res = await fetch('/api/shield/claim-public', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.access_token}`,
-        },
-        body: JSON.stringify({ shieldId, pin: pinInput }),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ shieldId, pin: pinInput, email }),
       });
 
       const body = await res.json();
 
       if (!res.ok) {
-        setError(body.error === 'Incorrect PIN' ? 'Incorrect PIN. Please try again.' : body.error || 'Failed to claim shield. Please try again.');
+        setError(
+          body.error === 'Incorrect PIN'
+            ? 'Incorrect PIN. Please try again.'
+            : body.error || 'Failed to claim shield. Please try again.'
+        );
         setStatus('error');
         return;
       }
 
+      setClaimedEmail(body.email || email);
       setStatus('success');
     } catch {
       setError('Could not claim shield. Please check your connection and try again.');
@@ -75,7 +115,7 @@ export default function ClaimShieldPage({ params }: ClaimPageProps) {
     }
   }
 
-  if (loading) {
+  if (!authChecked) {
     return (
       <main className="min-h-screen flex items-center justify-center bg-slate-900">
         <p className="text-sm text-slate-400">Loading…</p>
@@ -94,21 +134,30 @@ export default function ClaimShieldPage({ params }: ClaimPageProps) {
           <h1 className="text-2xl font-bold text-white">Shield Claimed</h1>
 
           <p className="text-sm text-slate-300">
-            This Silent Shield is now linked to <span className="font-semibold text-white">{user?.email}</span>.
+            This Silent Shield is now linked to{' '}
+            <span className="font-semibold text-white">{claimedEmail}</span>.
           </p>
 
-          <p className="text-xs text-slate-400">
-            You can now manage this shield from your account dashboard,
-            and recover your PIN if you ever forget it.
+          <p className="text-xs text-slate-400 leading-relaxed">
+            Sign in to manage this shield from your account dashboard, view scan notifications, and recover your PIN if you forget it.
           </p>
 
           <div className="space-y-3 pt-2">
-            <Link
-              href="/account"
-              className="block w-full rounded-lg bg-red-500 hover:bg-red-600 px-4 py-2.5 text-sm font-semibold text-white transition"
-            >
-              Go to My Account
-            </Link>
+            {signedInUser ? (
+              <Link
+                href="/account"
+                className="block w-full rounded-lg bg-red-500 hover:bg-red-600 px-4 py-2.5 text-sm font-semibold text-white transition"
+              >
+                Go to My Account
+              </Link>
+            ) : (
+              <a
+                href={`/account/login`}
+                className="block w-full rounded-lg bg-red-500 hover:bg-red-600 px-4 py-2.5 text-sm font-semibold text-white transition"
+              >
+                Sign In to My Account
+              </a>
+            )}
 
             <Link
               href={`/edit/${shieldId}`}
@@ -140,15 +189,31 @@ export default function ClaimShieldPage({ params }: ClaimPageProps) {
           Shield ID: <span className="font-mono text-slate-200">{shieldId}</span>
         </p>
 
-        <div className="rounded-xl border border-slate-700 bg-slate-800/70 p-4 text-center">
-          <p className="text-xs text-slate-400">Signed in as</p>
-          <p className="text-sm font-semibold text-white mt-0.5">{user?.email}</p>
-        </div>
+        {signedInUser ? (
+          <div className="rounded-xl border border-slate-700 bg-slate-800/70 p-4 text-center">
+            <p className="text-xs text-slate-400">Signed in as</p>
+            <p className="text-sm font-semibold text-white mt-0.5">{signedInUser.email}</p>
+          </div>
+        ) : (
+          <div className="rounded-xl border border-slate-700 bg-slate-800/50 p-4 space-y-1">
+            <p className="text-xs font-semibold text-slate-200">Enter your email to create your account</p>
+            <p className="text-[11px] text-slate-400 leading-relaxed">
+              Your shield will be linked to this email. You'll sign in with a magic link — no password needed.
+            </p>
+          </div>
+        )}
 
         <form onSubmit={handleClaim} className="space-y-4">
-          <p className="text-sm text-slate-400 text-center">
-            Enter your PIN to link this shield to your account.
-          </p>
+          {!signedInUser && (
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className={inputClassName}
+              placeholder="Your email address"
+              autoFocus
+            />
+          )}
 
           <input
             type="password"
@@ -156,6 +221,7 @@ export default function ClaimShieldPage({ params }: ClaimPageProps) {
             onChange={(e) => setPinInput(e.target.value)}
             className={inputClassName}
             placeholder="Edit PIN"
+            autoFocus={!!signedInUser}
           />
 
           {error && <p className="text-sm text-red-400">{error}</p>}

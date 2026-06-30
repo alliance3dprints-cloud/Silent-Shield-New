@@ -1,0 +1,105 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { getServiceRoleClient } from '@/lib/supabaseServiceRole';
+
+async function hashPin(pin: string): Promise<string> {
+  const enc = new TextEncoder();
+  const data = enc.encode(pin);
+  const digest = await crypto.subtle.digest('SHA-256', data);
+  return Array.from(new Uint8Array(digest))
+    .map((b) => b.toString(16).padStart(2, '0'))
+    .join('');
+}
+
+export async function POST(req: NextRequest) {
+  try {
+    const { shieldId, pin, email } = await req.json();
+
+    if (!shieldId || !pin || !email) {
+      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+    }
+
+    const emailLower = email.toLowerCase().trim();
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(emailLower)) {
+      return NextResponse.json({ error: 'Invalid email address' }, { status: 400 });
+    }
+
+    const db = getServiceRoleClient();
+
+    // Verify shield exists and PIN is correct
+    const { data: shield, error: shieldError } = await db
+      .from('silent_shields')
+      .select('id, Edit_pin_hash')
+      .eq('id', shieldId)
+      .maybeSingle();
+
+    if (shieldError || !shield) {
+      return NextResponse.json({ error: 'Shield not found' }, { status: 404 });
+    }
+
+    const enteredHash = await hashPin(pin);
+    if (!shield.Edit_pin_hash || enteredHash !== shield.Edit_pin_hash) {
+      return NextResponse.json({ error: 'Incorrect PIN' }, { status: 401 });
+    }
+
+    // Use generateLink to find-or-create the Supabase user by email
+    // This creates the user if they don't exist and returns their ID either way
+    const base = process.env.VERCEL_URL
+      ? `https://${process.env.VERCEL_URL}`
+      : process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000';
+
+    const { data: linkData, error: linkError } = await db.auth.admin.generateLink({
+      type: 'magiclink',
+      email: emailLower,
+      options: { redirectTo: `${base}/auth/callback` },
+    });
+
+    if (linkError || !linkData?.user) {
+      console.error('generateLink error:', linkError);
+      return NextResponse.json({ error: 'Could not create account. Please try again.' }, { status: 500 });
+    }
+
+    const userId = linkData.user.id;
+
+    // Check if already claimed
+    const { data: existing } = await db
+      .from('shield_owners')
+      .select('id, owner_id')
+      .eq('shield_id', shieldId)
+      .maybeSingle();
+
+    if (existing) {
+      if (existing.owner_id === userId) {
+        return NextResponse.json({ message: 'Already claimed by you', email: emailLower });
+      }
+      return NextResponse.json(
+        { error: 'This shield is already claimed by another account' },
+        { status: 409 }
+      );
+    }
+
+    // Claim the shield
+    const { error: claimError } = await db
+      .from('shield_owners')
+      .insert({ owner_id: userId, shield_id: shieldId });
+
+    if (claimError) {
+      console.error('Claim error:', claimError);
+      return NextResponse.json({ error: 'Failed to claim shield' }, { status: 500 });
+    }
+
+    // Seed default notification preferences
+    await db.from('notification_preferences').upsert({
+      owner_id: userId,
+      shield_id: shieldId,
+      email_enabled: true,
+      sms_enabled: false,
+      push_enabled: false,
+    });
+
+    return NextResponse.json({ message: 'Shield claimed successfully', email: emailLower });
+  } catch (err) {
+    console.error('claim-public error:', err);
+    return NextResponse.json({ error: 'Server error' }, { status: 500 });
+  }
+}
