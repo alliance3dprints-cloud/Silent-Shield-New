@@ -79,7 +79,6 @@ export default function ActivateShieldPage({ params }: ActivatePageProps) {
   const [status, setStatus] =
     useState<'idle' | 'activating' | 'success' | 'error'>('idle');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   function handlePhotoChange(file: File | null) {
     setPhotoFile(file);
@@ -182,7 +181,6 @@ export default function ActivateShieldPage({ params }: ActivatePageProps) {
         return;
       }
 
-      supabase.auth.getUser().then(({ data: { user } }) => setIsLoggedIn(!!user));
       setStatus('success');
     } catch (err) {
       console.error(err);
@@ -263,21 +261,12 @@ export default function ActivateShieldPage({ params }: ActivatePageProps) {
               View & Test My Silent Shield
             </button>
 
-            {isLoggedIn ? (
-              <a
-                href={`/claim/${shieldId}`}
-                className="block w-full text-center rounded-xl border border-emerald-500/40 bg-emerald-500/10 py-3 text-sm font-semibold text-emerald-200 hover:bg-emerald-500/20 transition"
-              >
-                Claim This Shield to My Account →
-              </a>
-            ) : (
-              <a
-                href={`/account/login?claim=${shieldId}`}
-                className="block w-full text-center rounded-xl border border-slate-700 bg-slate-900/60 py-3 text-sm font-semibold text-slate-200 hover:bg-slate-800 transition"
-              >
-                Create Account &amp; Claim This Shield
-              </a>
-            )}
+            <a
+              href={`/claim/${shieldId}`}
+              className="block w-full text-center rounded-xl border border-slate-700 bg-slate-900/60 py-3 text-sm font-semibold text-slate-200 hover:bg-slate-800 transition"
+            >
+              Claim This Shield to My Account
+            </a>
 
             <p className="text-[11px] text-slate-400 leading-relaxed">
               Claiming links this shield to your account so you can manage it from My Account,
