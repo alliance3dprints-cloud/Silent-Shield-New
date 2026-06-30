@@ -362,24 +362,17 @@ export default async function PublicShieldPage({ params }: PublicPageProps) {
     getFirstLine(data.Notes);
 
   return (
-    <main className="min-h-screen bg-slate-100 px-4 py-6">
-      <div className="mx-auto w-full max-w-md rounded-2xl shadow-2xl overflow-hidden">
+    <main className="min-h-screen bg-slate-100 px-4 py-8">
+      <div className="mx-auto w-full max-w-md space-y-4">
 
         {/* Dark header */}
-        <section className="bg-gradient-to-b from-slate-900 to-slate-800 p-6 text-center space-y-4">
+        <section className="rounded-2xl shadow-lg overflow-hidden bg-gradient-to-b from-slate-900 to-slate-800 p-6 text-center space-y-3">
           <p className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-[11px] font-semibold tracking-[0.2em] uppercase bg-red-500/10 text-red-400 border border-red-500/40">
             <span className="h-1.5 w-1.5 rounded-full bg-red-400 animate-pulse" />
             Emergency Profile
           </p>
 
-          {lastUpdated && (
-            <p className="inline-flex items-center gap-1.5 text-[11px] font-medium text-emerald-400">
-              <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
-              Updated {lastUpdated}
-            </p>
-          )}
-
-          <div className="mx-auto h-32 w-32 rounded-full border-2 border-slate-600 bg-slate-700 flex items-center justify-center overflow-hidden ring-4 ring-slate-700 shadow-xl">
+          <div className="mx-auto h-28 w-28 rounded-full border-2 border-slate-600 bg-slate-700 flex items-center justify-center overflow-hidden ring-4 ring-slate-700 shadow-xl">
             {data.photo_url ? (
               <img
                 src={data.photo_url}
@@ -406,30 +399,20 @@ export default async function PublicShieldPage({ params }: PublicPageProps) {
             </div>
           )}
 
-          <div>
-            <h1 className="text-3xl font-bold text-white tracking-tight">
-              {data.Name || 'Emergency Profile'}
-            </h1>
-            <p className="mt-1 text-xs text-slate-400 tracking-wide">
-              Silent Shield Emergency ID
-            </p>
-          </div>
+          <h1 className="text-3xl font-bold text-white tracking-tight">
+            {data.Name || 'Emergency Profile'}
+          </h1>
 
-          <div className="flex flex-wrap justify-center gap-2">
-            <span className="px-3 py-1 rounded-full text-xs font-semibold bg-slate-700 text-slate-200 border border-slate-600">
-              {category}
-            </span>
-            {age !== null && (
-              <span className="px-3 py-1 rounded-full text-xs font-semibold bg-slate-700 text-slate-200 border border-slate-600">
-                Age {age}
-              </span>
-            )}
-          </div>
+          <p className="text-xs text-slate-400">
+            {category}
+            {age !== null && ` · Age ${age}`}
+            {lastUpdated && ` · Updated ${lastUpdated}`}
+          </p>
         </section>
 
         {/* Call buttons — emergency first */}
         {(data.Emergency_Contact_Phone || data.contact_2_phone) && (
-          <section className="bg-white p-5 space-y-3 border-b border-slate-200">
+          <section className="rounded-2xl shadow-sm bg-white p-5 space-y-3">
             {data.Emergency_Contact_Phone && (
               <a
                 href={telHref(data.Emergency_Contact_Phone)}
@@ -474,24 +457,12 @@ export default async function PublicShieldPage({ params }: PublicPageProps) {
 
         {/* Medical Alerts */}
         {hasCritical && (
-          <section className="bg-white p-5 space-y-3 border-b border-slate-200">
+          <section className="rounded-2xl shadow-sm bg-white p-5 space-y-3">
             <h2 className="flex items-center gap-2 text-base font-bold text-red-600 uppercase tracking-[0.14em]">
               <AlertCircle className="h-5 w-5" aria-hidden="true" />
               Medical Alerts
             </h2>
-            <div className="rounded-xl border border-red-200 bg-red-50 p-4 space-y-3">
-              {alertBadges.length > 0 && (
-                <div className="flex flex-wrap gap-2">
-                  {alertBadges.map((badge) => (
-                    <span
-                      key={badge}
-                      className="px-2.5 py-1 rounded-md text-[11px] font-black tracking-[0.12em] uppercase bg-red-500 text-white"
-                    >
-                      {badge}
-                    </span>
-                  ))}
-                </div>
-              )}
+            <div className="rounded-xl border border-red-200 bg-red-50 p-4">
               {data.critical_notes && (
                 <p className="text-base leading-relaxed whitespace-pre-line text-slate-900">
                   {data.critical_notes}
@@ -508,7 +479,7 @@ export default async function PublicShieldPage({ params }: PublicPageProps) {
 
         {/* Health & Safety */}
         {hasMedical && (
-          <section className="bg-white p-5 space-y-3 border-b border-slate-200">
+          <section className="rounded-2xl shadow-sm bg-white p-5 space-y-3">
             <h2 className="flex items-center gap-2 text-base font-bold text-slate-700 uppercase tracking-[0.14em]">
               <Heart className="h-5 w-5 text-red-500" aria-hidden="true" />
               Health & Safety
@@ -528,7 +499,7 @@ export default async function PublicShieldPage({ params }: PublicPageProps) {
 
         {/* What To Do */}
         {hasInstructions && (
-          <section className="bg-white p-5 space-y-3 border-b border-slate-200">
+          <section className="rounded-2xl shadow-sm bg-white p-5 space-y-3">
             <h2 className="flex items-center gap-2 text-base font-bold text-amber-700 uppercase tracking-[0.14em]">
               <ClipboardList className="h-5 w-5" aria-hidden="true" />
               What To Do
@@ -550,7 +521,7 @@ export default async function PublicShieldPage({ params }: PublicPageProps) {
 
         {/* Quick Summary — fallback only when no Medical Alerts or Instructions */}
         {showQuickSummary && (quickSummaryItems.length > 0 || quickAction) && (
-          <section className="bg-white p-5 space-y-3 border-b border-slate-200">
+          <section className="rounded-2xl shadow-sm bg-white p-5 space-y-3">
             <h2 className="text-sm font-bold text-slate-500 uppercase tracking-[0.18em]">
               Quick Summary
             </h2>
@@ -570,7 +541,7 @@ export default async function PublicShieldPage({ params }: PublicPageProps) {
         )}
 
         {/* ICE Contact Details */}
-        <section className="bg-white p-5 space-y-3 border-b border-slate-200">
+        <section className="rounded-2xl shadow-sm bg-white p-5 space-y-3">
           <h2 className="flex items-center gap-2 text-base font-bold text-slate-700 uppercase tracking-[0.14em]">
             <Users className="h-5 w-5 text-slate-500" aria-hidden="true" />
             ICE Contact Details
@@ -597,7 +568,7 @@ export default async function PublicShieldPage({ params }: PublicPageProps) {
 
         {/* Address */}
         {data.Address && (
-          <section className="bg-white p-5 space-y-3 border-b border-slate-200">
+          <section className="rounded-2xl shadow-sm bg-white p-5 space-y-3">
             <h2 className="flex items-center gap-2 text-base font-bold text-slate-700 uppercase tracking-[0.14em]">
               <MapPin className="h-5 w-5 text-slate-500" aria-hidden="true" />
               Address on File
@@ -608,13 +579,11 @@ export default async function PublicShieldPage({ params }: PublicPageProps) {
           </section>
         )}
 
-        <footer className="bg-slate-50 p-5 text-center space-y-3 border-t border-slate-200">
-          <p className="text-xs font-semibold text-slate-600">Protected by Silent Shield</p>
-          <p className="text-xs text-slate-400">Emergency profile maintained by caregiver</p>
-
-          {lastUpdated && (
-            <p className="text-xs text-slate-400">Last updated: {lastUpdated}</p>
-          )}
+        <footer className="rounded-2xl bg-slate-50 border border-slate-200 p-5 text-center space-y-3">
+          <p className="text-xs text-slate-500">
+            <span className="font-semibold text-slate-600">Protected by Silent Shield</span>
+            {' · maintained by caregiver'}
+          </p>
 
           <p className="text-[11px] font-semibold text-red-500 leading-relaxed">
             In a life-threatening emergency, call 911.
