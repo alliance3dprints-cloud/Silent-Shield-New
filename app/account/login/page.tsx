@@ -45,7 +45,10 @@ export default function LoginPage() {
     if (claimShield) finalDest = `/claim/${claimShield}?verified=true`;
     if (redirect) finalDest = redirect;
 
-    const callbackUrl = `${window.location.origin}/auth/callback?next=${encodeURIComponent(finalDest)}`;
+    // Store destination before sending magic link — Supabase may strip ?next= query params
+    sessionStorage.setItem('auth_redirect', finalDest);
+
+    const callbackUrl = `${window.location.origin}/auth/callback`;
 
     const { error: authError } = await supabase.auth.signInWithOtp({
       email,
