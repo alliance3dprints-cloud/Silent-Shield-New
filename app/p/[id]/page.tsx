@@ -3,6 +3,7 @@ export const dynamic = 'force-dynamic';
 
 import { headers } from 'next/headers';
 import Link from 'next/link';
+import { Phone, AlertCircle, Heart, ClipboardList, MapPin, Users } from 'lucide-react';
 import { supabase } from '@/lib/supabaseClient';
 import { AddressReveal } from './AddressReveal';
 
@@ -360,15 +361,17 @@ export default async function PublicShieldPage({ params }: PublicPageProps) {
     getFirstLine(data.Notes);
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-black px-4 py-6 text-slate-100">
-      <div className="mx-auto w-full max-w-md bg-gradient-to-b from-slate-900 via-slate-950 to-black border border-red-500/40 rounded-2xl shadow-2xl overflow-hidden">
-        <section className="p-6 text-center space-y-4 border-b border-slate-800">
+    <main className="min-h-screen bg-slate-100 px-4 py-6">
+      <div className="mx-auto w-full max-w-md rounded-2xl shadow-2xl overflow-hidden">
+
+        {/* Dark header */}
+        <section className="bg-gradient-to-b from-slate-900 to-slate-800 p-6 text-center space-y-4">
           <p className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-[11px] font-semibold tracking-[0.2em] uppercase bg-red-500/10 text-red-400 border border-red-500/40">
             <span className="h-1.5 w-1.5 rounded-full bg-red-400 animate-pulse" />
             Emergency Profile
           </p>
 
-          <div className="mx-auto h-32 w-32 rounded-full border border-slate-600 bg-slate-800 flex items-center justify-center overflow-hidden ring-4 ring-slate-800 shadow-xl">
+          <div className="mx-auto h-32 w-32 rounded-full border-2 border-slate-600 bg-slate-700 flex items-center justify-center overflow-hidden ring-4 ring-slate-700 shadow-xl">
             {data.photo_url ? (
               <img
                 src={data.photo_url}
@@ -376,140 +379,109 @@ export default async function PublicShieldPage({ params }: PublicPageProps) {
                 className="h-full w-full object-cover"
               />
             ) : (
-              <span className="text-4xl font-bold text-slate-400">
+              <span className="text-4xl font-bold text-slate-300">
                 {data.Name ? data.Name.charAt(0).toUpperCase() : 'S'}
               </span>
             )}
           </div>
 
-          <div>
-            {alertBadges.length > 0 && (
-              <div className="flex flex-wrap justify-center gap-2 mb-4">
-                {alertBadges.map((badge) => (
-                  <span
-                    key={badge}
-                    className="px-3 py-1.5 rounded-lg text-xs font-black tracking-[0.16em] uppercase bg-red-500 text-white shadow-lg shadow-red-500/20"
-                  >
-                    {badge}
-                  </span>
-                ))}
-              </div>
-            )}
+          {alertBadges.length > 0 && (
+            <div className="flex flex-wrap justify-center gap-2">
+              {alertBadges.map((badge) => (
+                <span
+                  key={badge}
+                  className="px-3 py-1.5 rounded-lg text-xs font-black tracking-[0.16em] uppercase bg-red-500 text-white shadow-lg shadow-red-500/30"
+                >
+                  {badge}
+                </span>
+              ))}
+            </div>
+          )}
 
+          <div>
             <h1 className="text-3xl font-bold text-white tracking-tight">
               {data.Name || 'Emergency Profile'}
             </h1>
-
             <p className="mt-1 text-xs text-slate-400 tracking-wide">
               Silent Shield Emergency ID
             </p>
-
-            <div className="mt-3 flex flex-wrap justify-center gap-2">
-              <span className="px-3 py-1 rounded-full text-xs font-semibold bg-slate-800 text-slate-200 border border-slate-700">
-                {category}
-              </span>
-
-              {age !== null && (
-                <span className="px-3 py-1 rounded-full text-xs font-semibold bg-slate-800 text-slate-200 border border-slate-700">
-                  Age {age}
-                </span>
-              )}
-
-              {dob && (
-                <span className="px-3 py-1 rounded-full text-xs font-semibold bg-slate-800 text-slate-200 border border-slate-700">
-                  DOB: {dob}
-                </span>
-              )}
-            </div>
           </div>
 
-          <p className="text-[11px] text-slate-400">
-            Shield ID: <span className="font-mono text-slate-300">{shieldId}</span>
-          </p>
+          <div className="flex flex-wrap justify-center gap-2">
+            <span className="px-3 py-1 rounded-full text-xs font-semibold bg-slate-700 text-slate-200 border border-slate-600">
+              {category}
+            </span>
+            {age !== null && (
+              <span className="px-3 py-1 rounded-full text-xs font-semibold bg-slate-700 text-slate-200 border border-slate-600">
+                Age {age}
+              </span>
+            )}
+            {dob && (
+              <span className="px-3 py-1 rounded-full text-xs font-semibold bg-slate-700 text-slate-200 border border-slate-600">
+                DOB: {dob}
+              </span>
+            )}
+          </div>
         </section>
 
-        <section className="p-5 space-y-3 border-b border-slate-800">
-          {data.Emergency_Contact_Phone && (
-            <a
-              href={telHref(data.Emergency_Contact_Phone)}
-              className="block w-full rounded-xl bg-red-500 hover:bg-red-600 text-white text-center py-3 font-bold shadow-lg shadow-red-500/20 transition"
-            >
-              <span className="block uppercase tracking-wide">
-                Call First: {data.contact_1_relationship || 'ICE Contact'}
-              </span>
-              {data.Emergency_Contact_Name && (
-                <span className="block mt-0.5 text-sm font-medium text-red-100">
-                  {data.Emergency_Contact_Name}
+        {/* Call buttons — emergency first */}
+        {(data.Emergency_Contact_Phone || data.contact_2_phone) && (
+          <section className="bg-white p-5 space-y-3 border-b border-slate-200">
+            {data.Emergency_Contact_Phone && (
+              <a
+                href={telHref(data.Emergency_Contact_Phone)}
+                className="flex items-center justify-center gap-2 w-full rounded-xl bg-red-500 hover:bg-red-600 text-white text-center py-3.5 font-bold shadow-lg shadow-red-500/20 transition"
+              >
+                <Phone className="h-5 w-5" aria-hidden="true" />
+                <span>
+                  <span className="block text-sm uppercase tracking-wide">
+                    Call First: {data.contact_1_relationship || 'ICE Contact'}
+                  </span>
+                  {data.Emergency_Contact_Name && (
+                    <span className="block mt-0.5 text-sm font-medium text-red-100">
+                      {data.Emergency_Contact_Name}
+                    </span>
+                  )}
                 </span>
-              )}
-            </a>
-          )}
+              </a>
+            )}
 
-          {data.contact_2_phone && (
-            <a
-              href={telHref(data.contact_2_phone)}
-              className="block w-full rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-center py-3 font-bold border border-slate-700 transition"
-            >
-              <span className="block uppercase tracking-wide">
-                Call Second: {data.contact_2_relationship || 'Backup Contact'}
-              </span>
-              {data.contact_2_name && (
-                <span className="block mt-0.5 text-sm font-medium text-slate-300">
-                  {data.contact_2_name}
+            {data.contact_2_phone && (
+              <a
+                href={telHref(data.contact_2_phone)}
+                className="flex items-center justify-center gap-2 w-full rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-center py-3.5 font-bold border border-slate-300 transition"
+              >
+                <Phone className="h-5 w-5 text-slate-600" aria-hidden="true" />
+                <span>
+                  <span className="block text-sm uppercase tracking-wide">
+                    Call Second: {data.contact_2_relationship || 'Backup Contact'}
+                  </span>
+                  {data.contact_2_name && (
+                    <span className="block mt-0.5 text-sm font-medium text-slate-600">
+                      {data.contact_2_name}
+                    </span>
+                  )}
                 </span>
-              )}
-            </a>
-          )}
-        </section>
-
-        {(quickSummaryItems.length > 0 || quickAction) && (
-          <section className="p-5 space-y-3 border-b border-slate-800">
-            <h2 className="text-sm font-bold text-slate-300 uppercase tracking-[0.18em]">
-              Quick Summary
-            </h2>
-
-            <div className="rounded-xl border border-slate-700 bg-slate-800/70 p-4 space-y-2">
-              {quickSummaryItems.length > 0 && (
-                <p className="text-sm font-semibold text-slate-100">
-                  {quickSummaryItems.join(' • ')}
-                </p>
-              )}
-
-              {quickAction && (
-                <p className="text-sm leading-relaxed text-slate-300">
-                  {quickAction}
-                </p>
-              )}
-            </div>
+              </a>
+            )}
           </section>
         )}
 
-        {data.Address && (
-          <section className="p-5 space-y-3 border-b border-slate-800">
-            <h2 className="text-sm font-bold text-slate-300 uppercase tracking-[0.18em]">
-              Address on File
-            </h2>
-            <div className="rounded-xl border border-slate-700 bg-slate-800/70 p-4">
-              <AddressReveal address={data.Address} />
-            </div>
-          </section>
-        )}
-
+        {/* Medical Alerts */}
         {hasCritical && (
-          <section className="p-5 space-y-3 border-b border-slate-800">
-            <h2 className="text-sm font-bold text-red-300 uppercase tracking-[0.18em]">
+          <section className="bg-white p-5 space-y-3 border-b border-slate-200">
+            <h2 className="flex items-center gap-2 text-base font-bold text-red-600 uppercase tracking-[0.14em]">
+              <AlertCircle className="h-5 w-5" aria-hidden="true" />
               Medical Alerts
             </h2>
-
-            <div className="rounded-xl border border-red-500/40 bg-red-500/10 p-4">
+            <div className="rounded-xl border border-red-200 bg-red-50 p-4">
               {data.critical_notes && (
-                <p className="text-base leading-relaxed whitespace-pre-line text-white">
+                <p className="text-base leading-relaxed whitespace-pre-line text-slate-900">
                   {data.critical_notes}
                 </p>
               )}
-
               {!data.critical_notes && data.Medical_Info && (
-                <p className="text-base leading-relaxed whitespace-pre-line text-white">
+                <p className="text-base leading-relaxed whitespace-pre-line text-slate-900">
                   {data.Medical_Info}
                 </p>
               )}
@@ -517,21 +489,19 @@ export default async function PublicShieldPage({ params }: PublicPageProps) {
           </section>
         )}
 
+        {/* Health & Safety */}
         {hasMedical && (
-          <section className="p-5 space-y-3 border-b border-slate-800">
-            <h2 className="text-sm font-bold text-slate-300 uppercase tracking-[0.18em]">
+          <section className="bg-white p-5 space-y-3 border-b border-slate-200">
+            <h2 className="flex items-center gap-2 text-base font-bold text-slate-700 uppercase tracking-[0.14em]">
+              <Heart className="h-5 w-5 text-red-500" aria-hidden="true" />
               Health & Safety
             </h2>
-
             <div className="space-y-3">
               {data.conditions && <InfoCard label="Conditions" value={data.conditions} />}
-
               {data.allergies && !isNoAllergies(data.allergies) && (
                 <InfoCard label="Allergies" value={data.allergies} />
               )}
-
               {data.medications && <InfoCard label="Medications" value={data.medications} />}
-
               {data.blood_type && data.blood_type !== 'Unknown' && (
                 <InfoCard label="Blood Type" value={data.blood_type} />
               )}
@@ -539,21 +509,21 @@ export default async function PublicShieldPage({ params }: PublicPageProps) {
           </section>
         )}
 
+        {/* What To Do */}
         {hasInstructions && (
-          <section className="p-5 space-y-3 border-b border-slate-800">
-            <h2 className="text-sm font-bold text-yellow-300 uppercase tracking-[0.18em]">
+          <section className="bg-white p-5 space-y-3 border-b border-slate-200">
+            <h2 className="flex items-center gap-2 text-base font-bold text-amber-700 uppercase tracking-[0.14em]">
+              <ClipboardList className="h-5 w-5" aria-hidden="true" />
               What To Do
             </h2>
-
-            <div className="rounded-xl border border-yellow-500/30 bg-yellow-500/10 p-4">
+            <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
               {data.emergency_instructions && (
-                <p className="text-sm leading-relaxed whitespace-pre-line text-slate-100">
+                <p className="text-base leading-relaxed whitespace-pre-line text-slate-900">
                   {data.emergency_instructions}
                 </p>
               )}
-
               {!data.emergency_instructions && data.Notes && (
-                <p className="text-sm leading-relaxed whitespace-pre-line text-slate-100">
+                <p className="text-base leading-relaxed whitespace-pre-line text-slate-900">
                   {data.Notes}
                 </p>
               )}
@@ -561,8 +531,31 @@ export default async function PublicShieldPage({ params }: PublicPageProps) {
           </section>
         )}
 
-        <section className="p-5 space-y-3 border-b border-slate-800">
-          <h2 className="text-sm font-bold text-slate-300 uppercase tracking-[0.18em]">
+        {/* Quick Summary */}
+        {(quickSummaryItems.length > 0 || quickAction) && (
+          <section className="bg-white p-5 space-y-3 border-b border-slate-200">
+            <h2 className="text-sm font-bold text-slate-500 uppercase tracking-[0.18em]">
+              Quick Summary
+            </h2>
+            <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 space-y-2">
+              {quickSummaryItems.length > 0 && (
+                <p className="text-sm font-semibold text-slate-800">
+                  {quickSummaryItems.join(' • ')}
+                </p>
+              )}
+              {quickAction && (
+                <p className="text-sm leading-relaxed text-slate-700">
+                  {quickAction}
+                </p>
+              )}
+            </div>
+          </section>
+        )}
+
+        {/* ICE Contact Details */}
+        <section className="bg-white p-5 space-y-3 border-b border-slate-200">
+          <h2 className="flex items-center gap-2 text-base font-bold text-slate-700 uppercase tracking-[0.14em]">
+            <Users className="h-5 w-5 text-slate-500" aria-hidden="true" />
             ICE Contact Details
           </h2>
 
@@ -585,27 +578,40 @@ export default async function PublicShieldPage({ params }: PublicPageProps) {
           )}
         </section>
 
-        <footer className="p-5 text-center space-y-3">
-          <p className="text-xs text-slate-400">Silent Shield Emergency ID</p>
+        {/* Address */}
+        {data.Address && (
+          <section className="bg-white p-5 space-y-3 border-b border-slate-200">
+            <h2 className="flex items-center gap-2 text-base font-bold text-slate-700 uppercase tracking-[0.14em]">
+              <MapPin className="h-5 w-5 text-slate-500" aria-hidden="true" />
+              Address on File
+            </h2>
+            <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+              <AddressReveal address={data.Address} />
+            </div>
+          </section>
+        )}
+
+        <footer className="bg-slate-50 p-5 text-center space-y-3 border-t border-slate-200">
+          <p className="text-xs text-slate-500">Silent Shield Emergency ID</p>
 
           {lastUpdated && (
             <p className="text-xs text-slate-400">Last updated: {lastUpdated}</p>
           )}
 
-          <p className="text-[11px] text-slate-600 leading-relaxed">
+          <p className="text-[11px] text-slate-400 leading-relaxed">
             Profile maintained by owner/caregiver. In an emergency, call 911 or follow local emergency protocols.
           </p>
 
           <div className="flex justify-center gap-2 flex-wrap">
             <Link
               href={`/edit/${shieldId}`}
-              className="inline-flex items-center rounded-lg border border-slate-700 bg-slate-800/60 px-3 py-1.5 text-xs font-semibold text-slate-300 hover:bg-slate-700 hover:text-white transition"
+              className="inline-flex items-center rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-100 transition"
             >
               Update this profile
             </Link>
             <Link
               href="/account"
-              className="inline-flex items-center rounded-lg border border-slate-700 bg-slate-800/60 px-3 py-1.5 text-xs font-semibold text-slate-300 hover:bg-slate-700 hover:text-white transition"
+              className="inline-flex items-center rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-100 transition"
             >
               My Account
             </Link>
@@ -618,11 +624,11 @@ export default async function PublicShieldPage({ params }: PublicPageProps) {
 
 function InfoCard({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-xl border border-slate-700 bg-slate-800/70 p-4">
-      <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">
+    <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+      <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
         {label}
       </p>
-      <p className="mt-1 text-sm leading-relaxed text-slate-100 whitespace-pre-line">
+      <p className="mt-1 text-base leading-relaxed text-slate-900 whitespace-pre-line">
         {value}
       </p>
     </div>
@@ -641,24 +647,25 @@ function ContactCard({
   phone?: string | null;
 }) {
   return (
-    <div className="rounded-xl border border-slate-700 bg-slate-800/70 p-4">
-      <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">
+    <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+      <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
         {label}
       </p>
 
       {relationship && (
-        <p className="mt-1 text-xs font-bold uppercase tracking-wide text-red-300">
+        <p className="mt-1 text-xs font-bold uppercase tracking-wide text-red-600">
           {relationship}
         </p>
       )}
 
-      {name && <p className="mt-1 text-sm font-semibold text-white">{name}</p>}
+      {name && <p className="mt-1 text-base font-semibold text-slate-900">{name}</p>}
 
       {phone && (
         <a
           href={telHref(phone)}
-          className="mt-1 inline-block text-sm font-semibold text-red-300 underline underline-offset-2"
+          className="mt-1 inline-flex items-center gap-1.5 text-base font-semibold text-red-600 underline underline-offset-2"
         >
+          <Phone className="h-4 w-4" aria-hidden="true" />
           {formatPhone(phone)}
         </a>
       )}

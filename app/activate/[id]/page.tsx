@@ -471,6 +471,27 @@ export default function ActivateShieldPage({ params }: ActivatePageProps) {
             </div>
           </Section>
 
+          <Section title="Your Privacy">
+            <div className="space-y-2 text-[11px] text-slate-400 leading-relaxed">
+              <p>
+                <span className="font-semibold text-slate-300">Who can see this profile?</span>{' '}
+                Anyone who scans this NFC tag can view the name, photo, emergency contacts, medical information, and instructions you enter.
+              </p>
+              <p>
+                <span className="font-semibold text-slate-300">Address:</span>{' '}
+                Address is hidden by default — the viewer must tap "Show Address" to reveal it. Only add it if helpful for emergency responders.
+              </p>
+              <p>
+                <span className="font-semibold text-slate-300">Owner email:</span>{' '}
+                Your email (if provided) is never shown on the public profile. It is used only for scan notifications and account recovery.
+              </p>
+              <p>
+                <span className="font-semibold text-slate-300">Edit PIN:</span>{' '}
+                Your PIN is stored as a one-way hash. We cannot recover it in plain text — save it somewhere safe.
+              </p>
+            </div>
+          </Section>
+
           <Section title="Create an Edit PIN">
             <p className="text-sm text-slate-300">
               Choose a PIN you'll remember — you'll need it to edit this profile later.
