@@ -8,11 +8,11 @@ export function AddressReveal({ address }: { address: string }) {
   if (shown) {
     return (
       <div className="space-y-2">
-        <p className="text-sm leading-relaxed whitespace-pre-line text-slate-100">{address}</p>
+        <p className="text-base leading-relaxed whitespace-pre-line text-slate-900">{address}</p>
         <button
           type="button"
           onClick={() => setShown(false)}
-          className="text-xs text-slate-400 underline underline-offset-2 hover:text-slate-200"
+          className="text-xs text-slate-500 underline underline-offset-2 hover:text-slate-700"
         >
           Hide address
         </button>
@@ -24,7 +24,7 @@ export function AddressReveal({ address }: { address: string }) {
     <button
       type="button"
       onClick={() => setShown(true)}
-      className="text-sm font-semibold text-slate-300 underline underline-offset-2 hover:text-white"
+      className="text-sm font-semibold text-slate-600 underline underline-offset-2 hover:text-slate-900"
     >
       Show address
     </button>
