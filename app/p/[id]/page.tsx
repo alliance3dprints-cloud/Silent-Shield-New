@@ -329,7 +329,6 @@ export default async function PublicShieldPage({ params }: PublicPageProps) {
     );
   }
 
-  const dob = formatDate(data.Date_of_Birth);
   const age = calculateAge(data.Date_of_Birth);
   const lastUpdated = formatDate(data.last_updated_at || data.activated_at);
 
@@ -345,6 +344,8 @@ export default async function PublicShieldPage({ params }: PublicPageProps) {
     (data.blood_type && data.blood_type !== 'Unknown');
 
   const hasInstructions = data.emergency_instructions || data.Notes;
+
+  const showQuickSummary = !hasCritical && !hasInstructions;
 
   const quickSummaryItems = [
     age !== null ? `Age ${age}` : null,
@@ -370,6 +371,13 @@ export default async function PublicShieldPage({ params }: PublicPageProps) {
             <span className="h-1.5 w-1.5 rounded-full bg-red-400 animate-pulse" />
             Emergency Profile
           </p>
+
+          {lastUpdated && (
+            <p className="inline-flex items-center gap-1.5 text-[11px] font-medium text-emerald-400">
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+              Updated {lastUpdated}
+            </p>
+          )}
 
           <div className="mx-auto h-32 w-32 rounded-full border-2 border-slate-600 bg-slate-700 flex items-center justify-center overflow-hidden ring-4 ring-slate-700 shadow-xl">
             {data.photo_url ? (
@@ -416,11 +424,6 @@ export default async function PublicShieldPage({ params }: PublicPageProps) {
                 Age {age}
               </span>
             )}
-            {dob && (
-              <span className="px-3 py-1 rounded-full text-xs font-semibold bg-slate-700 text-slate-200 border border-slate-600">
-                DOB: {dob}
-              </span>
-            )}
           </div>
         </section>
 
@@ -430,11 +433,13 @@ export default async function PublicShieldPage({ params }: PublicPageProps) {
             {data.Emergency_Contact_Phone && (
               <a
                 href={telHref(data.Emergency_Contact_Phone)}
-                className="flex items-center justify-center gap-2 w-full rounded-xl bg-red-500 hover:bg-red-600 text-white text-center py-3.5 font-bold shadow-lg shadow-red-500/20 transition"
+                className="flex items-center justify-center gap-3 w-full rounded-xl bg-red-500 hover:bg-red-600 text-white text-center py-4 font-bold shadow-xl shadow-red-500/30 ring-2 ring-red-400/50 transition"
               >
-                <Phone className="h-5 w-5" aria-hidden="true" />
-                <span>
-                  <span className="block text-sm uppercase tracking-wide">
+                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-white/15">
+                  <Phone className="h-6 w-6" aria-hidden="true" />
+                </span>
+                <span className="text-left">
+                  <span className="block text-base uppercase tracking-wide">
                     Call First: {data.contact_1_relationship || 'ICE Contact'}
                   </span>
                   {data.Emergency_Contact_Name && (
@@ -474,7 +479,19 @@ export default async function PublicShieldPage({ params }: PublicPageProps) {
               <AlertCircle className="h-5 w-5" aria-hidden="true" />
               Medical Alerts
             </h2>
-            <div className="rounded-xl border border-red-200 bg-red-50 p-4">
+            <div className="rounded-xl border border-red-200 bg-red-50 p-4 space-y-3">
+              {alertBadges.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {alertBadges.map((badge) => (
+                    <span
+                      key={badge}
+                      className="px-2.5 py-1 rounded-md text-[11px] font-black tracking-[0.12em] uppercase bg-red-500 text-white"
+                    >
+                      {badge}
+                    </span>
+                  ))}
+                </div>
+              )}
               {data.critical_notes && (
                 <p className="text-base leading-relaxed whitespace-pre-line text-slate-900">
                   {data.critical_notes}
@@ -531,8 +548,8 @@ export default async function PublicShieldPage({ params }: PublicPageProps) {
           </section>
         )}
 
-        {/* Quick Summary */}
-        {(quickSummaryItems.length > 0 || quickAction) && (
+        {/* Quick Summary — fallback only when no Medical Alerts or Instructions */}
+        {showQuickSummary && (quickSummaryItems.length > 0 || quickAction) && (
           <section className="bg-white p-5 space-y-3 border-b border-slate-200">
             <h2 className="text-sm font-bold text-slate-500 uppercase tracking-[0.18em]">
               Quick Summary
@@ -592,14 +609,15 @@ export default async function PublicShieldPage({ params }: PublicPageProps) {
         )}
 
         <footer className="bg-slate-50 p-5 text-center space-y-3 border-t border-slate-200">
-          <p className="text-xs text-slate-500">Silent Shield Emergency ID</p>
+          <p className="text-xs font-semibold text-slate-600">Protected by Silent Shield</p>
+          <p className="text-xs text-slate-400">Emergency profile maintained by caregiver</p>
 
           {lastUpdated && (
             <p className="text-xs text-slate-400">Last updated: {lastUpdated}</p>
           )}
 
-          <p className="text-[11px] text-slate-400 leading-relaxed">
-            Profile maintained by owner/caregiver. In an emergency, call 911 or follow local emergency protocols.
+          <p className="text-[11px] font-semibold text-red-500 leading-relaxed">
+            In a life-threatening emergency, call 911.
           </p>
 
           <div className="flex justify-center gap-2 flex-wrap">
@@ -607,7 +625,7 @@ export default async function PublicShieldPage({ params }: PublicPageProps) {
               href={`/edit/${shieldId}`}
               className="inline-flex items-center rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-100 transition"
             >
-              Update this profile
+              Owner Sign In
             </Link>
             <Link
               href="/account"
