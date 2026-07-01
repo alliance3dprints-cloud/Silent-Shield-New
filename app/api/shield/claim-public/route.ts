@@ -42,24 +42,28 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Incorrect PIN' }, { status: 401 });
     }
 
-    // Use generateLink to find-or-create the Supabase user by email
-    // This creates the user if they don't exist and returns their ID either way
-    const base = process.env.VERCEL_URL
-      ? `https://${process.env.VERCEL_URL}`
-      : process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000';
+    // Find or create the Supabase user without sending any email.
+    // email_confirm: true marks the address verified so they can sign in via magic link later.
+    let userId: string;
 
-    const { data: linkData, error: linkError } = await db.auth.admin.generateLink({
-      type: 'magiclink',
-      email: emailLower,
-      options: { redirectTo: `${base}/auth/callback` },
-    });
+    const { data: existingUsers, error: listError } = await db.auth.admin.listUsers();
+    const existingUser = listError ? null : existingUsers?.users.find(u => u.email?.toLowerCase() === emailLower);
 
-    if (linkError || !linkData?.user) {
-      console.error('generateLink error:', linkError);
-      return NextResponse.json({ error: 'Could not create account. Please try again.' }, { status: 500 });
+    if (existingUser) {
+      userId = existingUser.id;
+    } else {
+      const { data: newUser, error: createError } = await db.auth.admin.createUser({
+        email: emailLower,
+        email_confirm: true,
+      });
+
+      if (createError || !newUser?.user) {
+        console.error('createUser error:', createError);
+        return NextResponse.json({ error: 'Could not create account. Please try again.' }, { status: 500 });
+      }
+
+      userId = newUser.user.id;
     }
-
-    const userId = linkData.user.id;
 
     // Check if already claimed
     const { data: existing } = await db

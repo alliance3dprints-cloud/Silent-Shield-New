@@ -293,37 +293,53 @@ export default function AccountPage() {
                     </div>
 
                     <div className="border-t border-slate-700 pt-3">
-                      <button
-                        type="button"
-                        role="switch"
-                        aria-checked={emailOn}
-                        aria-label={`${emailOn ? 'Disable' : 'Enable'} email notifications for ${shield?.Name || 'this shield'}`}
-                        disabled={saving}
-                        onClick={() => toggleEmailNotif(item.shield_id, emailOn)}
-                        className="flex w-full items-center justify-between gap-3 py-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500/60 rounded"
-                      >
-                        <span className="text-xs text-slate-400 text-left">
-                          Email me when this shield is scanned
-                          <span className="block text-[11px] text-slate-500 mt-0.5">
-                            When someone taps the NFC tag with a phone
+                      {isPremium ? (
+                        <>
+                          <button
+                            type="button"
+                            role="switch"
+                            aria-checked={emailOn}
+                            aria-label={`${emailOn ? 'Disable' : 'Enable'} email notifications for ${shield?.Name || 'this shield'}`}
+                            disabled={saving}
+                            onClick={() => toggleEmailNotif(item.shield_id, emailOn)}
+                            className="flex w-full items-center justify-between gap-3 py-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500/60 rounded"
+                          >
+                            <span className="text-xs text-slate-400 text-left">
+                              Email me when this shield is scanned
+                              <span className="block text-[11px] text-slate-500 mt-0.5">
+                                When someone taps the NFC tag with a phone
+                              </span>
+                            </span>
+                            <div
+                              aria-hidden="true"
+                              className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors ${
+                                emailOn ? 'bg-red-500' : 'bg-slate-600'
+                              } ${saving ? 'opacity-50' : ''}`}
+                            >
+                              <span
+                                className={`inline-block h-4 w-4 rounded-full bg-white shadow transition-transform ${
+                                  emailOn ? 'translate-x-6' : 'translate-x-1'
+                                }`}
+                              />
+                            </div>
+                          </button>
+                          {saving && <p className="mt-1 text-[11px] text-slate-400">Saving…</p>}
+                          {!saving && savedPref === item.shield_id && (
+                            <p className="mt-1 text-[11px] text-emerald-400">Saved ✓</p>
+                          )}
+                        </>
+                      ) : (
+                        <div className="flex items-center justify-between gap-3 py-1 opacity-50">
+                          <span className="text-xs text-slate-400 text-left">
+                            Email me when this shield is scanned
+                            <span className="block text-[11px] text-slate-500 mt-0.5">
+                              Requires Silent Shield Premium
+                            </span>
                           </span>
-                        </span>
-                        <div
-                          aria-hidden="true"
-                          className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors ${
-                            emailOn ? 'bg-red-500' : 'bg-slate-600'
-                          } ${saving ? 'opacity-50' : ''}`}
-                        >
-                          <span
-                            className={`inline-block h-4 w-4 rounded-full bg-white shadow transition-transform ${
-                              emailOn ? 'translate-x-6' : 'translate-x-1'
-                            }`}
-                          />
+                          <div aria-hidden="true" className="relative inline-flex h-6 w-11 shrink-0 items-center rounded-full bg-slate-600">
+                            <span className="inline-block h-4 w-4 rounded-full bg-white shadow translate-x-1" />
+                          </div>
                         </div>
-                      </button>
-                      {saving && <p className="mt-1 text-[11px] text-slate-400">Saving…</p>}
-                      {!saving && savedPref === item.shield_id && (
-                        <p className="mt-1 text-[11px] text-emerald-400">Saved ✓</p>
                       )}
                     </div>
                   </div>
