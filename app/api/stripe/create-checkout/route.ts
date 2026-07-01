@@ -23,7 +23,9 @@ export async function POST(req: NextRequest) {
   }
 
   const db = getServiceRoleClient();
-  const base = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000';
+  // Derive base URL from NEXT_PUBLIC_SITE_URL or fall back to the incoming request origin
+  const base = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, '')
+    || `${req.nextUrl.protocol}//${req.nextUrl.host}`;
 
   // Look up existing Stripe customer for this owner
   const { data: existing } = await db
@@ -34,37 +36,42 @@ export async function POST(req: NextRequest) {
 
   let stripeCustomerId = existing?.stripe_customer_id as string | undefined;
 
-  if (!stripeCustomerId) {
-    // Create Stripe customer and store it before checkout so we never duplicate
-    const customer = await stripe.customers.create({
-      email: user.email,
-      metadata: { owner_id: user.id },
-    });
-    stripeCustomerId = customer.id;
+  try {
+    if (!stripeCustomerId) {
+      const customer = await stripe.customers.create({
+        email: user.email,
+        metadata: { owner_id: user.id },
+      });
+      stripeCustomerId = customer.id;
 
-    await db.from('subscriptions').upsert(
-      {
-        owner_id: user.id,
-        stripe_customer_id: stripeCustomerId,
-        status: 'incomplete',
-        plan,
-        updated_at: new Date().toISOString(),
+      await db.from('subscriptions').upsert(
+        {
+          owner_id: user.id,
+          stripe_customer_id: stripeCustomerId,
+          status: 'incomplete',
+          plan,
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: 'owner_id' }
+      );
+    }
+
+    const session = await stripe.checkout.sessions.create({
+      mode: 'subscription',
+      customer: stripeCustomerId,
+      line_items: [{ price: priceId, quantity: 1 }],
+      success_url: `${base}/account?checkout=success`,
+      cancel_url: `${base}/account`,
+      client_reference_id: user.id,
+      subscription_data: {
+        metadata: { owner_id: user.id },
       },
-      { onConflict: 'owner_id' }
-    );
+    });
+
+    return NextResponse.json({ url: session.url });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Stripe error';
+    console.error('create-checkout error:', message);
+    return NextResponse.json({ error: message }, { status: 500 });
   }
-
-  const session = await stripe.checkout.sessions.create({
-    mode: 'subscription',
-    customer: stripeCustomerId,
-    line_items: [{ price: priceId, quantity: 1 }],
-    success_url: `${base}/account?checkout=success`,
-    cancel_url: `${base}/account`,
-    client_reference_id: user.id,
-    subscription_data: {
-      metadata: { owner_id: user.id },
-    },
-  });
-
-  return NextResponse.json({ url: session.url });
 }
