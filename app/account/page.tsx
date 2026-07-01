@@ -160,6 +160,7 @@ export default function AccountPage() {
             }
           }
           if (!found) await loadSubscription(session.access_token);
+          setSubLoading(false);
           setCheckoutPending(false);
           window.history.replaceState({}, '', '/account');
         } else {
