@@ -1,4 +1,3 @@
-// app/account/page.tsx
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
@@ -25,26 +24,49 @@ type Subscription = {
   cancel_at_period_end: boolean | null;
 } | null;
 
+type ScanEntry = {
+  id: string;
+  shield_id: string;
+  channel: string;
+  status: string;
+  created_at: string;
+  shield: { Name: string | null; profile_type: string | null } | null;
+};
+
+const CATEGORY_LABELS: Record<string, string> = {
+  general: 'General Emergency ID',
+  child: 'Child Safety',
+  adult: 'Adult Emergency ID',
+  senior: 'Senior Safety',
+  medical: 'Medical Alert',
+  autism: 'Autism / Nonverbal',
+  disability: 'Disability Support',
+  veteran: 'Veteran',
+  law_enforcement: 'Law Enforcement',
+  first_responder: 'First Responder',
+};
+
 function formatCategory(category?: string | null) {
-  const map: Record<string, string> = {
-    general: 'General Emergency ID',
-    child: 'Child Safety',
-    adult: 'Adult Emergency ID',
-    senior: 'Senior Safety',
-    medical: 'Medical Alert',
-    autism: 'Autism / Nonverbal',
-    disability: 'Disability Support',
-    veteran: 'Veteran',
-    law_enforcement: 'Law Enforcement',
-    first_responder: 'First Responder',
-  };
   if (!category) return 'Emergency ID';
-  return map[category] || category;
+  return CATEGORY_LABELS[category] || category;
+}
+
+function shieldDisplayName(shield: ClaimedShield['shield']): string {
+  if (shield?.Name?.trim()) return shield.Name.trim();
+  return formatCategory(shield?.profile_type);
 }
 
 function formatDate(iso: string | null) {
   if (!iso) return null;
   return new Date(iso).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
+}
+
+function formatDateTime(iso: string) {
+  const d = new Date(iso);
+  return {
+    date: d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }),
+    time: d.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' }),
+  };
 }
 
 export default function AccountPage() {
@@ -59,6 +81,7 @@ export default function AccountPage() {
   const [upgrading, setUpgrading] = useState(false);
   const [portalLoading, setPortalLoading] = useState(false);
   const [checkoutPending, setCheckoutPending] = useState(false);
+  const [scanHistory, setScanHistory] = useState<ScanEntry[]>([]);
 
   const loadSubscription = useCallback(async (token: string) => {
     const res = await fetch('/api/stripe/subscription-status', {
@@ -69,6 +92,16 @@ export default function AccountPage() {
       setSubscription(body.subscription);
     }
     setSubLoading(false);
+  }, []);
+
+  const loadScanHistory = useCallback(async (token: string) => {
+    const res = await fetch('/api/scan-history', {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (res.ok) {
+      const body = await res.json();
+      setScanHistory(body.entries ?? []);
+    }
   }, []);
 
   useEffect(() => {
@@ -108,7 +141,6 @@ export default function AccountPage() {
 
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
-        // If returning from Stripe checkout, poll until subscription record appears (up to 8s)
         const fromCheckout = new URLSearchParams(window.location.search).get('checkout') === 'success';
         if (fromCheckout) {
           setCheckoutPending(true);
@@ -129,11 +161,11 @@ export default function AccountPage() {
           }
           if (!found) await loadSubscription(session.access_token);
           setCheckoutPending(false);
-          // Clean up URL param
           window.history.replaceState({}, '', '/account');
         } else {
           await loadSubscription(session.access_token);
         }
+        await loadScanHistory(session.access_token);
       }
 
       setLoading(false);
@@ -146,7 +178,7 @@ export default function AccountPage() {
     });
 
     return () => authSub.unsubscribe();
-  }, [loadSubscription]);
+  }, [loadSubscription, loadScanHistory]);
 
   async function handleSignOut() {
     await supabase.auth.signOut();
@@ -254,41 +286,40 @@ export default function AccountPage() {
           ) : (
             <div className="space-y-3">
               {shields.map((item) => {
-                const shield = item.shield;
-                const name = shield?.Name || 'Unnamed Shield';
-                const category = formatCategory(shield?.profile_type);
+                const name = shieldDisplayName(item.shield);
+                const category = formatCategory(item.shield?.profile_type);
                 const emailOn = notifPrefs[item.shield_id] ?? true;
                 const saving = savingPref === item.shield_id;
+                const initial = name.charAt(0).toUpperCase();
 
                 return (
                   <div key={item.shield_id} className="rounded-xl border border-slate-700 bg-slate-800/70 p-4 space-y-3">
                     <div className="flex items-center gap-4">
                       <div className="h-12 w-12 shrink-0 rounded-full border border-slate-600 bg-slate-900 flex items-center justify-center overflow-hidden">
-                        {shield?.photo_url ? (
-                          <img src={shield.photo_url} alt={name} className="h-full w-full object-cover" />
+                        {item.shield?.photo_url ? (
+                          <img src={item.shield.photo_url} alt={name} className="h-full w-full object-cover" />
                         ) : (
-                          <span className="text-lg font-bold text-slate-400">{name.charAt(0).toUpperCase()}</span>
+                          <span className="text-lg font-bold text-slate-400">{initial}</span>
                         )}
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-semibold text-white truncate">{name}</p>
                         <p className="text-xs text-slate-400">{category}</p>
-                        <p className="text-[10px] text-slate-600 font-mono mt-0.5">{item.shield_id}</p>
                       </div>
                     </div>
 
                     <div className="flex gap-2">
                       <Link
                         href={`/p/${item.shield_id}`}
-                        className="flex-1 text-center rounded-lg border border-slate-600 bg-slate-900/60 px-3 py-1.5 text-xs font-semibold text-slate-200 hover:bg-slate-800"
+                        className="flex-1 text-center rounded-lg border border-slate-600 bg-slate-900/60 px-3 py-1.5 text-xs font-semibold text-slate-200 hover:bg-slate-800 transition"
                       >
-                        View
+                        View Profile
                       </Link>
                       <Link
                         href={`/edit/${item.shield_id}`}
-                        className="flex-1 text-center rounded-lg bg-red-500 hover:bg-red-600 px-3 py-1.5 text-xs font-semibold text-white"
+                        className="flex-1 text-center rounded-lg bg-red-500 hover:bg-red-600 px-3 py-1.5 text-xs font-semibold text-white transition"
                       >
-                        Edit
+                        Edit Profile
                       </Link>
                     </div>
 
@@ -299,15 +330,15 @@ export default function AccountPage() {
                             type="button"
                             role="switch"
                             aria-checked={emailOn}
-                            aria-label={`${emailOn ? 'Disable' : 'Enable'} email notifications for ${shield?.Name || 'this shield'}`}
+                            aria-label={`${emailOn ? 'Disable' : 'Enable'} email notifications for ${name}`}
                             disabled={saving}
                             onClick={() => toggleEmailNotif(item.shield_id, emailOn)}
                             className="flex w-full items-center justify-between gap-3 py-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500/60 rounded"
                           >
                             <span className="text-xs text-slate-400 text-left">
-                              Email me when this shield is scanned
+                              Email scan alerts
                               <span className="block text-[11px] text-slate-500 mt-0.5">
-                                When someone taps the NFC tag with a phone
+                                Notify me when this shield is scanned
                               </span>
                             </span>
                             <div
@@ -329,16 +360,14 @@ export default function AccountPage() {
                           )}
                         </>
                       ) : (
-                        <div className="flex items-center justify-between gap-3 py-1 opacity-50">
-                          <span className="text-xs text-slate-400 text-left">
-                            Email me when this shield is scanned
-                            <span className="block text-[11px] text-slate-500 mt-0.5">
-                              Requires Silent Shield Premium
-                            </span>
-                          </span>
-                          <div aria-hidden="true" className="relative inline-flex h-6 w-11 shrink-0 items-center rounded-full bg-slate-600">
-                            <span className="inline-block h-4 w-4 rounded-full bg-white shadow translate-x-1" />
+                        <div className="rounded-lg border border-slate-700/60 bg-slate-900/40 px-3 py-2.5 flex items-center justify-between gap-3">
+                          <div>
+                            <p className="text-xs font-semibold text-slate-300">Email Scan Alerts</p>
+                            <p className="text-[11px] text-slate-500 mt-0.5">Included with Silent Shield Premium</p>
                           </div>
+                          <span className="text-[10px] font-semibold text-red-400 border border-red-500/30 rounded-full px-2 py-0.5 shrink-0">
+                            Premium
+                          </span>
                         </div>
                       )}
                     </div>
@@ -378,6 +407,7 @@ export default function AccountPage() {
               willCancel={willCancel}
               portalLoading={portalLoading}
               onManage={handleManageBilling}
+              scanHistory={scanHistory}
             />
           ) : (
             <PremiumUpgrade
@@ -401,15 +431,19 @@ function PremiumActive({
   willCancel,
   portalLoading,
   onManage,
+  scanHistory,
 }: {
   plan: 'monthly' | 'annual';
   renewalDate: string | null;
   willCancel: boolean | null;
   portalLoading: boolean;
   onManage: () => void;
+  scanHistory: ScanEntry[];
 }) {
   return (
-    <div className="bg-gradient-to-b from-slate-900 to-slate-950 border-slate-700 px-6 py-7 space-y-5">
+    <div className="bg-gradient-to-b from-slate-900 to-slate-950 border-slate-700 px-6 py-7 space-y-6">
+
+      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <p className="text-[11px] font-semibold tracking-[0.2em] uppercase text-emerald-400">
@@ -424,6 +458,7 @@ function PremiumActive({
         </span>
       </div>
 
+      {/* Subscription details */}
       <div className="rounded-xl border border-slate-700 bg-slate-800/60 p-4 space-y-2">
         <Row label="Plan" value={plan === 'annual' ? 'Annual' : 'Monthly'} />
         <Row label="Status" value="Active" valueClass="text-emerald-400" />
@@ -444,17 +479,48 @@ function PremiumActive({
         </div>
       )}
 
-      <div className="space-y-2">
-        <p className="text-xs font-semibold text-slate-300 uppercase tracking-[0.15em]">Included with Premium</p>
-        <ul className="space-y-2">
-          <Feature text="Instant email scan alerts" active />
-          <Feature text="Notification history" active />
-          <Feature text="SMS alerts" soon />
-          <Feature text="Multiple caregiver notifications" soon />
-          <Feature text="Family plans" soon />
-        </ul>
+      {/* Scan History */}
+      <div className="space-y-3">
+        <p className="text-xs font-semibold text-slate-300 uppercase tracking-[0.15em]">Scan History</p>
+        {scanHistory.length === 0 ? (
+          <div className="rounded-xl border border-slate-700 bg-slate-800/40 p-5 text-center space-y-1">
+            <p className="text-sm font-semibold text-slate-300">No scans yet</p>
+            <p className="text-xs text-slate-500 leading-relaxed">
+              When someone taps your Silent Shield, it will appear here.
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {scanHistory.slice(0, 10).map((entry) => {
+              const { date, time } = formatDateTime(entry.created_at);
+              const shieldName = entry.shield?.Name?.trim() || formatCategory(entry.shield?.profile_type) || 'Shield';
+              const notified = entry.status === 'sent';
+              return (
+                <div key={entry.id} className="rounded-lg border border-slate-700 bg-slate-800/60 px-3 py-2.5 flex items-center justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="text-xs font-semibold text-slate-200 truncate">{shieldName} scanned</p>
+                    <p className="text-[11px] text-slate-500 mt-0.5">{date} · {time}</p>
+                  </div>
+                  <span className={`shrink-0 text-[10px] font-semibold rounded-full px-2 py-0.5 border ${
+                    notified
+                      ? 'text-emerald-400 border-emerald-500/30 bg-emerald-500/10'
+                      : 'text-slate-500 border-slate-600 bg-slate-800'
+                  }`}>
+                    {notified ? 'Notified' : 'No alert'}
+                  </span>
+                </div>
+              );
+            })}
+            {scanHistory.length > 10 && (
+              <p className="text-center text-[11px] text-slate-500">
+                Showing 10 of {scanHistory.length} scans
+              </p>
+            )}
+          </div>
+        )}
       </div>
 
+      {/* Manage */}
       <button
         type="button"
         onClick={onManage}
@@ -486,15 +552,15 @@ function PremiumUpgrade({
         <p className="text-[11px] font-semibold tracking-[0.2em] uppercase text-red-400">
           Silent Shield Premium
         </p>
-        <h2 className="mt-1 text-xl font-bold text-white">Peace of mind, delivered instantly.</h2>
+        <h2 className="mt-1 text-xl font-bold text-white">Know the moment your shield is scanned.</h2>
         <p className="mt-2 text-sm text-slate-400 leading-relaxed">
-          Receive an instant email alert whenever your Silent Shield is scanned — so you always know when someone is looking for help.
+          Get an instant email alert whenever your Silent Shield is viewed — so you always know when someone needs help.
         </p>
       </div>
 
       <ul className="space-y-2">
         <Feature text="Instant email scan alerts" active />
-        <Feature text="Notification history" active />
+        <Feature text="Scan history" active />
         <Feature text="SMS alerts" soon />
         <Feature text="Multiple caregiver notifications" soon />
         <Feature text="Family plans" soon />
@@ -519,7 +585,7 @@ function PremiumUpgrade({
         </div>
       ) : (
         <div className="space-y-3">
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 gap-3 items-start">
             <PriceButton
               label="Monthly"
               price="$3.99"
@@ -531,7 +597,8 @@ function PremiumUpgrade({
               label="Annual"
               price="$39.99"
               period="/yr"
-              badge="Save 17%"
+              badge="Best Value"
+              accent
               disabled={upgrading}
               onClick={() => onUpgrade('annual')}
             />
@@ -540,7 +607,7 @@ function PremiumUpgrade({
             <p className="text-center text-xs text-slate-400">Redirecting to checkout…</p>
           )}
           <p className="text-center text-[11px] text-slate-500 leading-relaxed">
-            Billed via Stripe. Cancel anytime from your account.
+            Billed via Stripe · Cancel anytime
           </p>
         </div>
       )}
@@ -553,6 +620,7 @@ function PriceButton({
   price,
   period,
   badge,
+  accent,
   disabled,
   onClick,
 }: {
@@ -560,6 +628,7 @@ function PriceButton({
   price: string;
   period: string;
   badge?: string;
+  accent?: boolean;
   disabled: boolean;
   onClick: () => void;
 }) {
@@ -568,16 +637,20 @@ function PriceButton({
       type="button"
       onClick={onClick}
       disabled={disabled}
-      className="relative flex flex-col items-center justify-center rounded-xl border border-slate-600 bg-slate-800 hover:border-red-500/60 hover:bg-slate-700 px-3 py-4 text-center disabled:opacity-60 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500/60"
+      className={`relative flex flex-col items-center justify-center rounded-xl px-3 py-4 text-center disabled:opacity-60 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500/60 ${
+        accent
+          ? 'border-2 border-red-500/60 bg-red-500/5 hover:bg-red-500/10 shadow-lg shadow-red-500/10'
+          : 'border border-slate-600 bg-slate-800 hover:border-red-500/60 hover:bg-slate-700'
+      }`}
     >
       {badge && (
-        <span className="absolute -top-2 left-1/2 -translate-x-1/2 rounded-full bg-red-500 px-2 py-0.5 text-[10px] font-bold text-white">
+        <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 rounded-full bg-red-500 px-2.5 py-0.5 text-[10px] font-bold text-white whitespace-nowrap">
           {badge}
         </span>
       )}
-      <span className="text-xs font-semibold text-slate-400">{label}</span>
-      <span className="mt-1 text-xl font-bold text-white">{price}</span>
-      <span className="text-[11px] text-slate-500">{period}</span>
+      <span className={`text-xs font-semibold ${accent ? 'text-slate-300' : 'text-slate-400'}`}>{label}</span>
+      <span className={`mt-1 text-2xl font-bold ${accent ? 'text-white' : 'text-white'}`}>{price}</span>
+      <span className={`text-[11px] ${accent ? 'text-slate-400' : 'text-slate-500'}`}>{period}</span>
     </button>
   );
 }
