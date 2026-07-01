@@ -589,18 +589,12 @@ export default async function PublicShieldPage({ params }: PublicPageProps) {
             In a life-threatening emergency, call 911.
           </p>
 
-          <div className="flex justify-center gap-2 flex-wrap">
-            <Link
-              href={`/edit/${shieldId}`}
-              className="inline-flex items-center rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-100 transition"
-            >
-              Owner Sign In
-            </Link>
+          <div className="flex justify-center">
             <Link
               href="/account"
               className="inline-flex items-center rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-100 transition"
             >
-              My Account
+              Owner Portal
             </Link>
           </div>
         </footer>
