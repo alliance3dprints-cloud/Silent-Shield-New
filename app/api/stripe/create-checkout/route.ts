@@ -23,9 +23,13 @@ export async function POST(req: NextRequest) {
   }
 
   const db = getServiceRoleClient();
-  // Derive base URL from NEXT_PUBLIC_SITE_URL or fall back to the incoming request origin
-  const base = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, '')
-    || `${req.nextUrl.protocol}//${req.nextUrl.host}`;
+  // Derive base URL from env var, or reconstruct from Vercel/proxy forwarding headers
+  let base = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, '');
+  if (!base) {
+    const proto = req.headers.get('x-forwarded-proto') ?? 'https';
+    const host = req.headers.get('x-forwarded-host') ?? req.headers.get('host') ?? 'localhost:3000';
+    base = `${proto}://${host}`;
+  }
 
   // Look up existing Stripe customer for this owner
   const { data: existing } = await db
