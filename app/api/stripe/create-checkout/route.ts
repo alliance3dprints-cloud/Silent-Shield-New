@@ -41,6 +41,20 @@ export async function POST(req: NextRequest) {
   let stripeCustomerId = existing?.stripe_customer_id as string | undefined;
 
   try {
+    // If we have a stored customer ID, verify it still exists in Stripe.
+    // Stale IDs appear when switching between test/live keys or after test data is cleared.
+    if (stripeCustomerId) {
+      try {
+        await stripe.customers.retrieve(stripeCustomerId);
+      } catch {
+        // Customer no longer exists — clear it and create a fresh one below
+        stripeCustomerId = undefined;
+        await db.from('subscriptions')
+          .update({ stripe_customer_id: null, updated_at: new Date().toISOString() })
+          .eq('owner_id', user.id);
+      }
+    }
+
     if (!stripeCustomerId) {
       const customer = await stripe.customers.create({
         email: user.email,
