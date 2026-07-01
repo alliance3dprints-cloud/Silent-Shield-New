@@ -30,7 +30,6 @@ type ScanEntry = {
   channel: string;
   status: string;
   created_at: string;
-  shield: { Name: string | null; profile_type: string | null } | null;
 };
 
 const CATEGORY_LABELS: Record<string, string> = {
@@ -82,6 +81,7 @@ export default function AccountPage() {
   const [portalLoading, setPortalLoading] = useState(false);
   const [checkoutPending, setCheckoutPending] = useState(false);
   const [scanHistory, setScanHistory] = useState<ScanEntry[]>([]);
+  const [upgradeError, setUpgradeError] = useState<string | null>(null);
 
   const loadSubscription = useCallback(async (token: string) => {
     const res = await fetch('/api/stripe/subscription-status', {
@@ -206,19 +206,29 @@ export default function AccountPage() {
 
   async function handleUpgrade(plan: 'monthly' | 'annual') {
     setUpgrading(true);
+    setUpgradeError(null);
     const { data: { session } } = await supabase.auth.getSession();
-    if (!session) { setUpgrading(false); return; }
+    if (!session) {
+      window.location.href = '/account/login';
+      return;
+    }
 
-    const res = await fetch('/api/stripe/create-checkout', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
-      body: JSON.stringify({ plan }),
-    });
+    try {
+      const res = await fetch('/api/stripe/create-checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
+        body: JSON.stringify({ plan }),
+      });
 
-    if (res.ok) {
-      const { url } = await res.json();
-      window.location.href = url;
-    } else {
+      const body = await res.json();
+      if (res.ok && body.url) {
+        window.location.href = body.url;
+      } else {
+        setUpgradeError(body.error || 'Something went wrong. Please try again.');
+        setUpgrading(false);
+      }
+    } catch {
+      setUpgradeError('Could not reach checkout. Check your connection and try again.');
       setUpgrading(false);
     }
   }
@@ -408,11 +418,13 @@ export default function AccountPage() {
               portalLoading={portalLoading}
               onManage={handleManageBilling}
               scanHistory={scanHistory}
+              shields={shields}
             />
           ) : (
             <PremiumUpgrade
               pastDue={subscription?.status === 'past_due'}
               upgrading={upgrading}
+              upgradeError={upgradeError}
               portalLoading={portalLoading}
               onUpgrade={handleUpgrade}
               onManageBilling={handleManageBilling}
@@ -432,6 +444,7 @@ function PremiumActive({
   portalLoading,
   onManage,
   scanHistory,
+  shields,
 }: {
   plan: 'monthly' | 'annual';
   renewalDate: string | null;
@@ -439,6 +452,7 @@ function PremiumActive({
   portalLoading: boolean;
   onManage: () => void;
   scanHistory: ScanEntry[];
+  shields: ClaimedShield[];
 }) {
   return (
     <div className="bg-gradient-to-b from-slate-900 to-slate-950 border-slate-700 px-6 py-7 space-y-6">
@@ -493,7 +507,8 @@ function PremiumActive({
           <div className="space-y-2">
             {scanHistory.slice(0, 10).map((entry) => {
               const { date, time } = formatDateTime(entry.created_at);
-              const shieldName = entry.shield?.Name?.trim() || formatCategory(entry.shield?.profile_type) || 'Shield';
+              const matchedShield = shields.find(s => s.shield_id === entry.shield_id);
+              const shieldName = shieldDisplayName(matchedShield?.shield ?? null);
               const notified = entry.status === 'sent';
               return (
                 <div key={entry.id} className="rounded-lg border border-slate-700 bg-slate-800/60 px-3 py-2.5 flex items-center justify-between gap-3">
@@ -536,12 +551,14 @@ function PremiumActive({
 function PremiumUpgrade({
   pastDue,
   upgrading,
+  upgradeError,
   portalLoading,
   onUpgrade,
   onManageBilling,
 }: {
   pastDue: boolean;
   upgrading: boolean;
+  upgradeError: string | null;
   portalLoading: boolean;
   onUpgrade: (plan: 'monthly' | 'annual') => void;
   onManageBilling: () => void;
@@ -605,6 +622,9 @@ function PremiumUpgrade({
           </div>
           {upgrading && (
             <p className="text-center text-xs text-slate-400">Redirecting to checkout…</p>
+          )}
+          {upgradeError && (
+            <p className="text-center text-xs text-red-400">{upgradeError}</p>
           )}
           <p className="text-center text-[11px] text-slate-500 leading-relaxed">
             Billed via Stripe · Cancel anytime

@@ -9,7 +9,7 @@ export async function GET(req: NextRequest) {
 
   const { data, error } = await db
     .from('notification_log')
-    .select('id, shield_id, channel, event_type, status, created_at, shield:silent_shields(Name, profile_type)')
+    .select('id, shield_id, channel, event_type, status, created_at')
     .eq('owner_id', user.id)
     .eq('event_type', 'scan')
     .order('created_at', { ascending: false })
