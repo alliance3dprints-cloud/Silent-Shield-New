@@ -32,12 +32,17 @@ export async function notifyOwners(shieldId: string, eventType: NotificationEven
     const shieldName = shield?.Name || shieldId;
 
     for (const { owner_id } of owners) {
-      // [Future slot] Subscription check:
-      // const tier = await getOwnerSubscriptionTier(owner_id);
-      // if (!tierAllowsNotifications(tier)) {
-      //   await logNotification({ shieldId, ownerId: owner_id, channel: 'email', eventType, status: 'skipped_no_subscription' });
-      //   continue;
-      // }
+      // Subscription gate — only send if owner has an active Premium subscription
+      const { data: sub } = await db
+        .from('subscriptions')
+        .select('status')
+        .eq('owner_id', owner_id)
+        .maybeSingle();
+
+      if (!sub || sub.status !== 'active') {
+        await logNotification({ shieldId, ownerId: owner_id, channel: 'email', eventType, status: 'skipped_no_subscription' });
+        continue;
+      }
 
       const { data: prefs } = await db
         .from('notification_preferences')
