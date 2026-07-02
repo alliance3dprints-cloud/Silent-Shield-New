@@ -12,7 +12,6 @@ create table if not exists public.marketing_opt_in (
 alter table public.marketing_opt_in enable row level security;
 
 -- Owners may read their own preference; all writes go through the service role.
-drop policy if exists "Owner can read own marketing pref" on public.marketing_opt_in;
 create policy "Owner can read own marketing pref"
   on public.marketing_opt_in
   for select
