@@ -637,6 +637,10 @@ export default async function PublicShieldPage({ params, searchParams }: PublicP
             >
               Own this shield? Claim it to your account
             </Link>
+            <div className="flex justify-center gap-3 pt-1 text-[11px] text-slate-400">
+              <Link href="/privacy" className="hover:text-slate-600 underline underline-offset-2">Privacy</Link>
+              <Link href="/terms" className="hover:text-slate-600 underline underline-offset-2">Terms</Link>
+            </div>
           </div>
         </footer>
       </div>

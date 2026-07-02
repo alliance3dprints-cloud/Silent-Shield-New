@@ -144,10 +144,18 @@ export default function HomePage() {
           </div>
         </section>
 
-        <footer className="text-center space-y-2 pb-4">
+        <footer className="text-center space-y-3 pb-4">
           <p className="text-[11px] text-slate-600 leading-relaxed">
             The emergency profile is always free and fully functional.
             No app required. No subscription needed to save a life.
+          </p>
+          <div className="flex flex-wrap justify-center gap-x-4 gap-y-1 text-[11px] text-slate-500">
+            <Link href="/privacy" className="hover:text-slate-300 underline underline-offset-2">Privacy Policy</Link>
+            <Link href="/terms" className="hover:text-slate-300 underline underline-offset-2">Terms of Service</Link>
+            <a href="mailto:support@alliance3dprints.com" className="hover:text-slate-300 underline underline-offset-2">Contact Support</a>
+          </div>
+          <p className="text-[11px] text-slate-600">
+            © {new Date().getFullYear()} Alliance 3D Prints LLC
           </p>
         </footer>
       </div>
