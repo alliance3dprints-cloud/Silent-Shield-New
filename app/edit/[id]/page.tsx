@@ -22,8 +22,6 @@ type ShieldRow = {
   Notes: string | null;
   photo_url: string | null;
 
-  owner_email: string | null;
-  owner_email_consent: boolean | null;
 
   contact_2_name: string | null;
   contact_2_phone: string | null;
@@ -83,8 +81,6 @@ export default function EditShieldPage({ params }: EditPageProps) {
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
 
-  const [ownerEmail, setOwnerEmail] = useState('');
-  const [ownerEmailConsent, setOwnerEmailConsent] = useState(false);
 
   const [emName, setEmName] = useState('');
   const [emPhone, setEmPhone] = useState('');
@@ -175,8 +171,6 @@ export default function EditShieldPage({ params }: EditPageProps) {
     setAddress(verifiedRow.Address ?? '');
     setPhotoUrl(verifiedRow.photo_url ?? null);
     setPhotoPreview(verifiedRow.photo_url ?? null);
-    setOwnerEmail(verifiedRow.owner_email ?? '');
-    setOwnerEmailConsent(verifiedRow.owner_email_consent ?? false);
     setEmName(verifiedRow.Emergency_Contact_Name ?? '');
     setEmPhone(verifiedRow.Emergency_Contact_Phone ?? '');
     setContact1Relationship(verifiedRow.contact_1_relationship ?? '');
@@ -244,12 +238,6 @@ export default function EditShieldPage({ params }: EditPageProps) {
     setSaveError(null);
     setSaveStatus('saving');
 
-    if (ownerEmail && !ownerEmailConsent) {
-      setSaveStatus('error');
-      setSaveError('Please check the email consent box or remove the email address.');
-      return;
-    }
-
     try {
       const updatedPhotoUrl = photoFile
         ? await uploadProfilePhoto(shieldId, photoFile)
@@ -261,9 +249,6 @@ export default function EditShieldPage({ params }: EditPageProps) {
         Date_of_Birth: dob || null,
         Address: address || null,
         photo_url: updatedPhotoUrl || null,
-
-        owner_email: ownerEmail || null,
-        owner_email_consent: ownerEmail ? ownerEmailConsent : false,
 
         Emergency_Contact_Name: emName || null,
         Emergency_Contact_Phone: emPhone || null,
@@ -479,34 +464,6 @@ export default function EditShieldPage({ params }: EditPageProps) {
               <PhotoUpload previewUrl={photoPreview} onChange={handlePhotoChange} />
 
               <TextInput label="Address" value={address} onChange={setAddress} />
-            </Section>
-
-            <Section title="Owner Email">
-              <div className="space-y-3">
-                <TextInput
-                  label="Email Address Optional"
-                  value={ownerEmail}
-                  onChange={setOwnerEmail}
-                />
-
-                <p className="text-[11px] text-slate-400">
-                  Used only for important Silent Shield updates, profile review reminders,
-                  and support related to this shield.
-                </p>
-
-                <label className="flex items-start gap-3">
-                  <input
-                    type="checkbox"
-                    checked={ownerEmailConsent}
-                    onChange={(e) => setOwnerEmailConsent(e.target.checked)}
-                    className="mt-1 h-4 w-4 rounded border-slate-600 bg-slate-900"
-                  />
-
-                  <span className="text-xs leading-relaxed text-slate-300">
-                    I agree to receive important updates about this Silent Shield profile.
-                  </span>
-                </label>
-              </div>
             </Section>
 
             <Section title="Primary Contact">

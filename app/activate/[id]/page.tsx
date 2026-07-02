@@ -43,13 +43,11 @@ export default function ActivateShieldPage({ params }: ActivatePageProps) {
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
 
-  const [ownerEmail, setOwnerEmail] = useState('');
-  const [ownerEmailConsent, setOwnerEmailConsent] = useState(false);
-
   const [emName, setEmName] = useState('');
   const [emPhone, setEmPhone] = useState('');
   const [contact1Relationship, setContact1Relationship] = useState('');
 
+  const [showSecondContact, setShowSecondContact] = useState(false);
   const [contact2Name, setContact2Name] = useState('');
   const [contact2Phone, setContact2Phone] = useState('');
   const [contact2Relationship, setContact2Relationship] = useState('');
@@ -83,11 +81,6 @@ export default function ActivateShieldPage({ params }: ActivatePageProps) {
   }
 
   function validateForm() {
-    if (ownerEmail && !ownerEmailConsent) {
-      setErrorMessage('Please check the email consent box or leave the email field blank.');
-      return false;
-    }
-
     if (!pin || !confirmPin) {
       setErrorMessage('Please create and confirm a PIN.');
       return false;
@@ -129,9 +122,6 @@ export default function ActivateShieldPage({ params }: ActivatePageProps) {
         Date_of_Birth: dob || null,
         Address: address || null,
         photo_url: photoUrl,
-
-        owner_email: ownerEmail || null,
-        owner_email_consent: ownerEmail ? ownerEmailConsent : false,
 
         Emergency_Contact_Name: emName || null,
         Emergency_Contact_Phone: emPhone || null,
@@ -372,28 +362,38 @@ export default function ActivateShieldPage({ params }: ActivatePageProps) {
             />
           </Section>
 
-          <Section title="Secondary Contact">
-            <TextInput
-              label="Name"
-              value={contact2Name}
-              onChange={setContact2Name}
-              placeholder="Example: John"
-            />
-
-            <FieldLabel label="Relationship">
-              <RelationshipSelect
-                value={contact2Relationship}
-                onChange={setContact2Relationship}
+          {showSecondContact ? (
+            <Section title="Secondary Contact">
+              <TextInput
+                label="Name"
+                value={contact2Name}
+                onChange={setContact2Name}
+                placeholder="Example: John"
               />
-            </FieldLabel>
 
-            <TextInput
-              label="Phone"
-              value={contact2Phone}
-              onChange={setContact2Phone}
-              placeholder="Example: (214) 555-1234"
-            />
-          </Section>
+              <FieldLabel label="Relationship">
+                <RelationshipSelect
+                  value={contact2Relationship}
+                  onChange={setContact2Relationship}
+                />
+              </FieldLabel>
+
+              <TextInput
+                label="Phone"
+                value={contact2Phone}
+                onChange={setContact2Phone}
+                placeholder="Example: (214) 555-1234"
+              />
+            </Section>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setShowSecondContact(true)}
+              className="w-full rounded-xl border border-dashed border-slate-700 bg-slate-900/40 py-3 text-xs font-semibold text-slate-300 hover:bg-slate-800/60 transition"
+            >
+              + Add a second contact (optional)
+            </button>
+          )}
 
           <Section title="Medical Information">
             <TextArea
@@ -443,56 +443,6 @@ export default function ActivateShieldPage({ params }: ActivatePageProps) {
             />
           </Section>
 
-          <Section title="Owner Email">
-            <div className="space-y-3">
-              <TextInput
-                label="Email Address Optional"
-                value={ownerEmail}
-                onChange={setOwnerEmail}
-                placeholder="Example: owner@email.com"
-              />
-
-              <p className="text-[11px] text-slate-400">
-                Used only for important Silent Shield updates, profile review reminders,
-                and support related to this shield.
-              </p>
-
-              <label className="flex items-start gap-3">
-                <input
-                  type="checkbox"
-                  checked={ownerEmailConsent}
-                  onChange={(e) => setOwnerEmailConsent(e.target.checked)}
-                  className="mt-1 h-4 w-4 rounded border-slate-600 bg-slate-900"
-                />
-
-                <span className="text-xs leading-relaxed text-slate-300">
-                  I agree to receive important updates about this Silent Shield profile.
-                </span>
-              </label>
-            </div>
-          </Section>
-
-          <Section title="Your Privacy">
-            <div className="space-y-2 text-[11px] text-slate-400 leading-relaxed">
-              <p>
-                <span className="font-semibold text-slate-300">Who can see this profile?</span>{' '}
-                Anyone who scans this NFC tag can view the name, photo, emergency contacts, medical information, and instructions you enter.
-              </p>
-              <p>
-                <span className="font-semibold text-slate-300">Address:</span>{' '}
-                Address is hidden by default — the viewer must tap "Show Address" to reveal it. Only add it if helpful for emergency responders.
-              </p>
-              <p>
-                <span className="font-semibold text-slate-300">Owner email:</span>{' '}
-                Your email (if provided) is never shown on the public profile. It is used only for scan notifications and account recovery.
-              </p>
-              <p>
-                <span className="font-semibold text-slate-300">Edit PIN:</span>{' '}
-                Your PIN is stored as a one-way hash. We cannot recover it in plain text — save it somewhere safe.
-              </p>
-            </div>
-          </Section>
-
           <Section title="Create an Edit PIN">
             <p className="text-sm text-slate-300">
               Choose a PIN you'll remember — you'll need it to edit this profile later.
@@ -517,6 +467,11 @@ export default function ActivateShieldPage({ params }: ActivatePageProps) {
               className={inputClassName}
             />
           </Section>
+
+          <p className="text-[11px] text-slate-500 leading-relaxed">
+            Anyone who scans this tag can see what you enter here. Your address stays hidden until a viewer taps
+            &ldquo;Show Address.&rdquo; You can edit everything anytime with your PIN.
+          </p>
 
           {errorMessage && <p className="text-sm text-red-400">{errorMessage}</p>}
 
