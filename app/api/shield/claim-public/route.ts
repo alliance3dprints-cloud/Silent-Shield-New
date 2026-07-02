@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServiceRoleClient } from '@/lib/supabaseServiceRole';
 import { verifyPin, hashPin } from '@/lib/pin';
+import { setMarketingOptIn } from '@/lib/marketing';
 
 export async function POST(req: NextRequest) {
   try {
-    const { shieldId, pin, email } = await req.json();
+    const { shieldId, pin, email, marketingOptIn } = await req.json();
 
     if (!shieldId || !pin || !email) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
@@ -96,6 +97,11 @@ export async function POST(req: NextRequest) {
       sms_enabled: false,
       push_enabled: false,
     });
+
+    // Record marketing consent (explicit opt-in only).
+    if (marketingOptIn === true) {
+      await setMarketingOptIn(userId, emailLower, true);
+    }
 
     return NextResponse.json({ message: 'Shield claimed successfully', email: emailLower });
   } catch (err) {

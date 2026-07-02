@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAuthenticatedUser, getServiceRoleClient } from '@/lib/supabaseServiceRole';
 import { verifyPin, hashPin } from '@/lib/pin';
+import { setMarketingOptIn } from '@/lib/marketing';
 
 export async function POST(req: NextRequest) {
   try {
@@ -9,7 +10,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
     }
 
-    const { shieldId, pin } = await req.json();
+    const { shieldId, pin, marketingOptIn } = await req.json();
 
     if (!shieldId || !pin) {
       return NextResponse.json({ error: 'Missing shieldId or pin' }, { status: 400 });
@@ -66,6 +67,10 @@ export async function POST(req: NextRequest) {
       sms_enabled: false,
       push_enabled: false,
     });
+
+    if (marketingOptIn === true) {
+      await setMarketingOptIn(user.id, user.email ?? '', true);
+    }
 
     return NextResponse.json({ message: 'Shield claimed successfully' });
   } catch {

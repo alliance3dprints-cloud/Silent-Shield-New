@@ -87,6 +87,8 @@ export default function AccountPage() {
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const [deleteText, setDeleteText] = useState('');
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [marketingOptIn, setMarketingOptIn] = useState(false);
+  const [marketingSaving, setMarketingSaving] = useState(false);
 
   const loadSubscription = useCallback(async (token: string) => {
     const res = await fetch('/api/stripe/subscription-status', {
@@ -172,6 +174,14 @@ export default function AccountPage() {
           await loadSubscription(session.access_token);
         }
         await loadScanHistory(session.access_token);
+
+        const mres = await fetch('/api/preferences/marketing', {
+          headers: { Authorization: `Bearer ${session.access_token}` },
+        });
+        if (mres.ok) {
+          const body = await mres.json();
+          setMarketingOptIn(body.opted_in === true);
+        }
       }
 
       setLoading(false);
@@ -246,6 +256,23 @@ export default function AccountPage() {
       setDeleteText('');
     }
     setDeletingId(null);
+  }
+
+  async function handleToggleMarketing() {
+    const next = !marketingOptIn;
+    setMarketingSaving(true);
+    setMarketingOptIn(next); // optimistic
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) { setMarketingSaving(false); return; }
+
+    const res = await fetch('/api/preferences/marketing', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
+      body: JSON.stringify({ opted_in: next }),
+    });
+
+    if (!res.ok) setMarketingOptIn(!next); // revert on failure
+    setMarketingSaving(false);
   }
 
   async function handleUpgrade(plan: 'monthly' | 'annual') {
@@ -537,6 +564,36 @@ export default function AccountPage() {
               })}
             </div>
           )}
+
+          <div className="pt-3 border-t border-slate-800">
+            <button
+              type="button"
+              role="switch"
+              aria-checked={marketingOptIn}
+              disabled={marketingSaving}
+              onClick={handleToggleMarketing}
+              className="flex w-full items-center justify-between gap-3 py-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500/60 rounded"
+            >
+              <span className="text-xs text-slate-400 text-left">
+                Product updates
+                <span className="block text-[11px] text-slate-500 mt-0.5">
+                  Occasional emails about new features
+                </span>
+              </span>
+              <div
+                aria-hidden="true"
+                className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors ${
+                  marketingOptIn ? 'bg-red-500' : 'bg-slate-600'
+                } ${marketingSaving ? 'opacity-50' : ''}`}
+              >
+                <span
+                  className={`inline-block h-4 w-4 rounded-full bg-white shadow transition-transform ${
+                    marketingOptIn ? 'translate-x-6' : 'translate-x-1'
+                  }`}
+                />
+              </div>
+            </button>
+          </div>
 
           <div className="pt-3 border-t border-slate-800">
             <button

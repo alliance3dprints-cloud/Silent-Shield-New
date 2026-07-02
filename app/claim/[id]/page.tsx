@@ -20,6 +20,7 @@ export default function ClaimShieldPage({ params }: ClaimPageProps) {
 
   const [email, setEmail] = useState('');
   const [pinInput, setPinInput] = useState('');
+  const [marketingOptIn, setMarketingOptIn] = useState(false);
   const [claimedEmail, setClaimedEmail] = useState('');
   const [status, setStatus] = useState<'idle' | 'claiming' | 'success' | 'error'>('idle');
   const [error, setError] = useState<string | null>(null);
@@ -57,7 +58,7 @@ export default function ClaimShieldPage({ params }: ClaimPageProps) {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${session.access_token}`,
           },
-          body: JSON.stringify({ shieldId, pin: pinInput }),
+          body: JSON.stringify({ shieldId, pin: pinInput, marketingOptIn }),
         });
 
         const body = await res.json();
@@ -92,7 +93,7 @@ export default function ClaimShieldPage({ params }: ClaimPageProps) {
       const res = await fetch('/api/shield/claim-public', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ shieldId, pin: pinInput, email }),
+        body: JSON.stringify({ shieldId, pin: pinInput, email, marketingOptIn }),
       });
 
       const body = await res.json();
@@ -231,6 +232,18 @@ export default function ClaimShieldPage({ params }: ClaimPageProps) {
             placeholder="Edit PIN"
             autoFocus={!!signedInUser}
           />
+
+          <label className="flex items-start gap-3">
+            <input
+              type="checkbox"
+              checked={marketingOptIn}
+              onChange={(e) => setMarketingOptIn(e.target.checked)}
+              className="mt-0.5 h-4 w-4 rounded border-slate-600 bg-slate-900"
+            />
+            <span className="text-xs leading-relaxed text-slate-400">
+              Email me occasionally about new features and updates. No spam — unsubscribe anytime.
+            </span>
+          </label>
 
           {error && <p className="text-sm text-red-400">{error}</p>}
 
