@@ -225,16 +225,39 @@ export default function ActivateShieldPage({ params }: ActivatePageProps) {
             </p>
           </div>
   
-          <div className="rounded-xl border border-slate-700 bg-slate-900/60 p-4 text-left">
-            <p className="text-sm font-semibold text-slate-100">
-              Next step
-            </p>
-            <p className="mt-1 text-xs leading-relaxed text-slate-400">
-              View your Silent Shield profile and test the contact buttons to make sure everything looks correct.
-            </p>
+          <div className="rounded-xl border border-red-500/40 bg-red-500/5 p-4 text-left space-y-3">
+            <div className="flex items-center justify-between gap-3">
+              <p className="text-sm font-bold text-white">
+                One last step: claim your shield
+              </p>
+              <span className="rounded-full bg-red-500/10 border border-red-500/30 px-2 py-0.5 text-[10px] font-semibold text-red-300 shrink-0">
+                Recommended
+              </span>
+            </div>
+            <ul className="space-y-2">
+              {[
+                'Get notified the moment your shield is scanned',
+                'Recover your PIN by email if you forget it',
+                'Manage all your shields from one account',
+              ].map((benefit) => (
+                <li key={benefit} className="flex items-start gap-2.5 text-xs leading-relaxed text-slate-200">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-400" aria-hidden="true">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                  </svg>
+                  {benefit}
+                </li>
+              ))}
+            </ul>
           </div>
-  
+
           <div className="space-y-3">
+            <a
+              href={`/claim/${shieldId}`}
+              className="block w-full text-center rounded-xl bg-red-500 hover:bg-red-600 text-white py-3.5 text-sm font-bold transition shadow-lg shadow-red-500/20"
+            >
+              Claim This Shield to My Account
+            </a>
+
             <button
               type="button"
               onClick={() => {
@@ -242,21 +265,13 @@ export default function ActivateShieldPage({ params }: ActivatePageProps) {
                   window.location.href = `/p/${shieldId}`;
                 }
               }}
-              className="w-full bg-red-500 hover:bg-red-600 text-white rounded-xl py-3 text-sm font-bold transition shadow-lg shadow-red-500/20"
-            >
-              View & Test My Silent Shield
-            </button>
-
-            <a
-              href={`/claim/${shieldId}`}
               className="block w-full text-center rounded-xl border border-slate-700 bg-slate-900/60 py-3 text-sm font-semibold text-slate-200 hover:bg-slate-800 transition"
             >
-              Claim This Shield to My Account
-            </a>
+              Skip for now — just view my profile
+            </button>
 
-            <p className="text-[11px] text-slate-400 leading-relaxed">
-              Claiming links this shield to your account so you can manage it from My Account,
-              get scan notifications, and recover your PIN if you forget it.
+            <p className="text-[11px] text-slate-500 leading-relaxed text-center">
+              You can always claim it later, but you won&apos;t get scan alerts until you do.
             </p>
           </div>
         </div>
