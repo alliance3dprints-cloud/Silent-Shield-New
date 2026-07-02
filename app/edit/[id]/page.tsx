@@ -573,7 +573,7 @@ export default function EditShieldPage({ params }: EditPageProps) {
                 </p>
 
                 <Link
-                  href={`/p/${shieldId}`}
+                  href={`/p/${shieldId}?owner=1`}
                   className="block w-full text-center rounded-lg border border-slate-700 bg-slate-900/60 px-4 py-2 text-sm font-semibold text-slate-100 hover:bg-slate-800"
                 >
                   View Public Profile

@@ -1,6 +1,11 @@
 // app/p/[id]/page.tsx
 export const dynamic = 'force-dynamic';
 
+// Personal emergency profiles must never be indexed by search engines.
+export const metadata = {
+  robots: { index: false, follow: false },
+};
+
 import { headers } from 'next/headers';
 import Link from 'next/link';
 import { Phone, AlertCircle, Heart, ClipboardList, MapPin, Users } from 'lucide-react';
@@ -9,7 +14,14 @@ import { AddressReveal } from './AddressReveal';
 
 type PublicPageProps = {
   params: { id: string };
+  searchParams?: { [key: string]: string | string[] | undefined };
 };
+
+// Link-unfurl / crawler bots fetch the page to build previews — those are not real scans.
+function isBotUserAgent(ua: string | null): boolean {
+  if (!ua) return true; // no UA is almost always automated
+  return /bot|crawler|spider|facebookexternalhit|whatsapp|slackbot|telegrambot|discordbot|twitterbot|linkedinbot|embedly|quora|pinterest|redditbot|applebot|bingpreview|googlebot|semrush|ahrefs|preview|monitor|curl|wget|python-requests|axios|headless/i.test(ua);
+}
 
 type AlertBadgeSource = {
   profile_type?: string | null;
@@ -189,7 +201,7 @@ function buildAlertBadges(data: AlertBadgeSource) {
   return badges.slice(0, 6);
 }
 
-export default async function PublicShieldPage({ params }: PublicPageProps) {
+export default async function PublicShieldPage({ params, searchParams }: PublicPageProps) {
   const shieldId = params.id;
 
   const { data, error } = await supabase
@@ -220,22 +232,30 @@ export default async function PublicShieldPage({ params }: PublicPageProps) {
     const ip = headersList.get('x-forwarded-for')?.split(',')[0]?.trim() || null;
     const userAgent = headersList.get('user-agent') || null;
 
-    supabase
-      .from('scan_events')
-      .insert({ shield_id: shieldId, ip_address: ip, user_agent: userAgent })
-      .then(({ error: logError }) => {
-        if (logError) console.error('Scan log failed:', logError);
-      });
+    // Suppress false-positive scans:
+    //  • bot/crawler/link-unfurl fetches (iMessage, Slack, WhatsApp, search bots)
+    //  • the owner previewing their own profile from the dashboard (?owner=1)
+    const ownerPreview = searchParams?.owner === '1';
+    const isRealScan = !ownerPreview && !isBotUserAgent(userAgent);
 
-    // Fire notification via API route so it runs to completion independent of this response stream
-    const base = process.env.VERCEL_URL
-      ? `https://${process.env.VERCEL_URL}`
-      : process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000';
-    fetch(`${base}/api/shield/notify`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ shieldId }),
-    }).catch(() => {});
+    if (isRealScan) {
+      supabase
+        .from('scan_events')
+        .insert({ shield_id: shieldId, ip_address: ip, user_agent: userAgent })
+        .then(({ error: logError }) => {
+          if (logError) console.error('Scan log failed:', logError);
+        });
+
+      // Fire notification via API route so it runs to completion independent of this response stream
+      const base = process.env.VERCEL_URL
+        ? `https://${process.env.VERCEL_URL}`
+        : process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000';
+      fetch(`${base}/api/shield/notify`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ shieldId }),
+      }).catch(() => {});
+    }
   }
 
   if (!data || data.Activated !== true) {

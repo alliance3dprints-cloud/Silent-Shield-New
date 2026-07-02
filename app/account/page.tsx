@@ -321,7 +321,7 @@ export default function AccountPage() {
 
                     <div className="flex gap-2">
                       <Link
-                        href={`/p/${item.shield_id}`}
+                        href={`/p/${item.shield_id}?owner=1`}
                         className="flex-1 text-center rounded-lg border border-slate-600 bg-slate-900/60 px-3 py-1.5 text-xs font-semibold text-slate-200 hover:bg-slate-800 transition"
                       >
                         View Profile
