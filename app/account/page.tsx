@@ -84,6 +84,9 @@ export default function AccountPage() {
   const [upgradeError, setUpgradeError] = useState<string | null>(null);
   const [confirmRemove, setConfirmRemove] = useState<string | null>(null);
   const [removingId, setRemovingId] = useState<string | null>(null);
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const [deleteText, setDeleteText] = useState('');
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const loadSubscription = useCallback(async (token: string) => {
     const res = await fetch('/api/stripe/subscription-status', {
@@ -223,6 +226,26 @@ export default function AccountPage() {
       setConfirmRemove(null);
     }
     setRemovingId(null);
+  }
+
+  async function handleDeleteProfile(shieldId: string) {
+    setDeletingId(shieldId);
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) { setDeletingId(null); return; }
+
+    const res = await fetch('/api/shield/delete-profile', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
+      body: JSON.stringify({ shieldId }),
+    });
+
+    if (res.ok) {
+      setShields((prev) => prev.filter((s) => s.shield_id !== shieldId));
+      setDeleteConfirmId(null);
+      setConfirmRemove(null);
+      setDeleteText('');
+    }
+    setDeletingId(null);
   }
 
   async function handleUpgrade(plan: 'monthly' | 'annual') {
@@ -424,30 +447,81 @@ export default function AccountPage() {
                       )}
                     </div>
 
-                    {confirmRemove === item.shield_id ? (
-                      <div className="rounded-lg border border-red-500/30 bg-red-500/5 p-3 space-y-2">
-                        <p className="text-xs text-slate-300 leading-relaxed">
-                          Remove <span className="font-semibold text-white">{name}</span> from your account?
-                          The emergency profile stays active — you can re-claim it later with its PIN.
+                    {deleteConfirmId === item.shield_id ? (
+                      <div className="rounded-lg border border-red-500/50 bg-red-500/10 p-3 space-y-2.5">
+                        <p className="text-xs font-bold text-red-200">Permanently delete this profile?</p>
+                        <p className="text-[11px] text-slate-300 leading-relaxed">
+                          This erases <span className="font-semibold text-white">{name}</span>&apos;s name, medical info,
+                          contacts, and photo, and deactivates the shield so the tag can no longer be scanned.
+                          This <span className="font-semibold text-white">cannot be undone</span>.
                         </p>
+                        <div>
+                          <label className="block text-[11px] text-slate-400 mb-1">
+                            Type <span className="font-mono font-semibold text-slate-200">DELETE</span> to confirm
+                          </label>
+                          <input
+                            value={deleteText}
+                            onChange={(e) => setDeleteText(e.target.value)}
+                            className="w-full border border-slate-700 bg-slate-900/60 rounded px-3 py-1.5 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-red-500/60"
+                            placeholder="DELETE"
+                            autoFocus
+                          />
+                        </div>
                         <div className="flex gap-2">
                           <button
                             type="button"
-                            onClick={() => handleRemove(item.shield_id)}
-                            disabled={removingId === item.shield_id}
-                            className="flex-1 rounded-lg bg-red-500 hover:bg-red-600 px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-60 transition"
+                            onClick={() => handleDeleteProfile(item.shield_id)}
+                            disabled={deleteText !== 'DELETE' || deletingId === item.shield_id}
+                            className="flex-1 rounded-lg bg-red-600 hover:bg-red-700 px-3 py-1.5 text-xs font-bold text-white disabled:opacity-40 disabled:cursor-not-allowed transition"
                           >
-                            {removingId === item.shield_id ? 'Removing…' : 'Remove'}
+                            {deletingId === item.shield_id ? 'Deleting…' : 'Delete permanently'}
                           </button>
                           <button
                             type="button"
-                            onClick={() => setConfirmRemove(null)}
-                            disabled={removingId === item.shield_id}
+                            onClick={() => { setDeleteConfirmId(null); setDeleteText(''); }}
+                            disabled={deletingId === item.shield_id}
                             className="flex-1 rounded-lg border border-slate-600 bg-slate-900/60 px-3 py-1.5 text-xs font-semibold text-slate-200 hover:bg-slate-800 transition"
                           >
                             Cancel
                           </button>
                         </div>
+                      </div>
+                    ) : confirmRemove === item.shield_id ? (
+                      <div className="rounded-lg border border-slate-600 bg-slate-900/60 p-3 space-y-2.5">
+                        <p className="text-xs font-semibold text-white">Get rid of {name}?</p>
+
+                        <button
+                          type="button"
+                          onClick={() => handleRemove(item.shield_id)}
+                          disabled={removingId === item.shield_id}
+                          className="w-full text-left rounded-lg border border-slate-600 bg-slate-800/60 hover:bg-slate-800 px-3 py-2 transition disabled:opacity-60"
+                        >
+                          <span className="block text-xs font-semibold text-slate-100">
+                            {removingId === item.shield_id ? 'Removing…' : 'Remove from my account'}
+                          </span>
+                          <span className="block text-[11px] text-slate-400 mt-0.5">
+                            Unlinks it here. Profile stays active — re-claim later with its PIN.
+                          </span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => setDeleteConfirmId(item.shield_id)}
+                          className="w-full text-left rounded-lg border border-red-500/30 bg-red-500/5 hover:bg-red-500/10 px-3 py-2 transition"
+                        >
+                          <span className="block text-xs font-semibold text-red-300">Delete profile data</span>
+                          <span className="block text-[11px] text-slate-400 mt-0.5">
+                            Permanently wipes the profile and deactivates the shield. For a lost or discarded tag.
+                          </span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => setConfirmRemove(null)}
+                          className="block w-full text-center text-[11px] text-slate-500 hover:text-slate-300 pt-0.5 transition"
+                        >
+                          Cancel
+                        </button>
                       </div>
                     ) : (
                       <button
