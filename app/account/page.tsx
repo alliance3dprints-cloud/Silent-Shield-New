@@ -379,10 +379,10 @@ export default function AccountPage() {
           {/* Shields */}
           {shields.length === 0 ? (
             <div className="rounded-xl border border-slate-700 bg-slate-800/70 p-6 text-center space-y-2">
-              <p className="text-sm font-semibold text-slate-200">No shields claimed yet</p>
+              <p className="text-sm font-semibold text-slate-200">No shields linked yet</p>
               <p className="text-xs text-slate-400 leading-relaxed">
-                Tap any Silent Shield with your phone, then tap{' '}
-                <span className="font-semibold text-slate-200">Edit Profile</span> and claim it to link it here.
+                Scan your Silent Shield with your phone to open its profile, then tap{' '}
+                <span className="font-semibold text-slate-200">Claim This Shield</span> to link it to your account.
               </p>
             </div>
           ) : (
