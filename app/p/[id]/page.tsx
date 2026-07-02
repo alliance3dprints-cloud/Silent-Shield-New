@@ -204,11 +204,23 @@ function buildAlertBadges(data: AlertBadgeSource) {
 export default async function PublicShieldPage({ params, searchParams }: PublicPageProps) {
   const shieldId = params.id;
 
-  const { data, error } = await supabase
+  // Explicit column list — never selects Edit_pin_hash or owner_email so the
+  // public anon key has no path to sensitive fields.
+  const { data: rawData, error } = await supabase
     .from('silent_shields')
-    .select('*')
+    .select(
+      'id, Activated, Name, Date_of_Birth, photo_url, profile_type, ' +
+      'conditions, allergies, medications, blood_type, ' +
+      'critical_notes, emergency_instructions, Medical_Info, Notes, ' +
+      'Emergency_Contact_Name, Emergency_Contact_Phone, contact_1_relationship, ' +
+      'contact_2_name, contact_2_phone, contact_2_relationship, ' +
+      'Address, last_updated_at, activated_at'
+    )
     .eq('id', shieldId)
     .maybeSingle();
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const data = rawData as Record<string, any> | null;
 
   if (error) {
     console.error(error);

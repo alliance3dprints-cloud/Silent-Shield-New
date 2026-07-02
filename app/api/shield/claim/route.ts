@@ -1,14 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAuthenticatedUser, getServiceRoleClient } from '@/lib/supabaseServiceRole';
-
-async function hashPin(pin: string): Promise<string> {
-  const enc = new TextEncoder();
-  const data = enc.encode(pin);
-  const digest = await crypto.subtle.digest('SHA-256', data);
-  return Array.from(new Uint8Array(digest))
-    .map((b) => b.toString(16).padStart(2, '0'))
-    .join('');
-}
+import { verifyPin, hashPin } from '@/lib/pin';
 
 export async function POST(req: NextRequest) {
   try {
@@ -35,9 +27,13 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Shield not found' }, { status: 404 });
     }
 
-    const enteredHash = await hashPin(pin);
-    if (!shield.Edit_pin_hash || enteredHash !== shield.Edit_pin_hash) {
+    const { ok, legacy } = await verifyPin(pin, shield.Edit_pin_hash);
+    if (!ok) {
       return NextResponse.json({ error: 'Incorrect PIN' }, { status: 401 });
+    }
+    if (legacy) {
+      const upgraded = await hashPin(pin);
+      await db.from('silent_shields').update({ Edit_pin_hash: upgraded }).eq('id', shieldId);
     }
 
     const { data: existing } = await db

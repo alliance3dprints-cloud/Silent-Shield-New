@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAuthenticatedUser, getServiceRoleClient } from '@/lib/supabaseServiceRole';
-import { hashPin } from '@/lib/pin';
 
+// Returns the full editable row for a shield the authenticated user owns.
+// Used by the edit page owner path so it never reads the shield table (or the
+// PIN hash) with the public anon key.
 export async function POST(req: NextRequest) {
   try {
     const user = await getAuthenticatedUser(req);
@@ -9,14 +11,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
     }
 
-    const { shieldId, newPin } = await req.json();
-
-    if (!shieldId || !newPin) {
-      return NextResponse.json({ error: 'Missing shieldId or newPin' }, { status: 400 });
-    }
-
-    if (newPin.length < 4 || newPin.length > 10) {
-      return NextResponse.json({ error: 'PIN must be 4-10 characters' }, { status: 400 });
+    const { shieldId } = await req.json();
+    if (!shieldId) {
+      return NextResponse.json({ error: 'Missing shieldId' }, { status: 400 });
     }
 
     const db = getServiceRoleClient();
@@ -32,20 +29,20 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'You do not own this shield' }, { status: 403 });
     }
 
-    const newHash = await hashPin(newPin);
-
-    const { error: updateError } = await db
+    const { data: shield, error } = await db
       .from('silent_shields')
-      .update({ Edit_pin_hash: newHash, last_updated_at: new Date().toISOString() })
-      .eq('id', shieldId);
+      .select('*')
+      .eq('id', shieldId)
+      .maybeSingle();
 
-    if (updateError) {
-      console.error('PIN reset error:', updateError);
-      return NextResponse.json({ error: 'Failed to reset PIN' }, { status: 500 });
+    if (error || !shield) {
+      return NextResponse.json({ error: 'Shield not found' }, { status: 404 });
     }
 
-    return NextResponse.json({ message: 'PIN reset successfully' });
-  } catch {
+    const { Edit_pin_hash, ...safeRow } = shield;
+    return NextResponse.json({ data: safeRow });
+  } catch (err) {
+    console.error('load-owned route error:', err);
     return NextResponse.json({ error: 'Server error' }, { status: 500 });
   }
 }

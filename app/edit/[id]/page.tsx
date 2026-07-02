@@ -136,16 +136,23 @@ export default function EditShieldPage({ params }: EditPageProps) {
           setShowPinReset(true);
         }
 
-        const { data: shieldData } = await supabase
-          .from('silent_shields')
-          .select('*')
-          .eq('id', shieldId)
-          .maybeSingle();
-
-        if (shieldData) {
-          const { Edit_pin_hash, ...safeRow } = shieldData;
-          populateForm(safeRow as ShieldRow);
-          setVerified(true);
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) {
+          const res = await fetch('/api/shield/load-owned', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${session.access_token}`,
+            },
+            body: JSON.stringify({ shieldId }),
+          });
+          if (res.ok) {
+            const { data: shieldData } = await res.json();
+            if (shieldData) {
+              populateForm(shieldData as ShieldRow);
+              setVerified(true);
+            }
+          }
         }
       } else {
         const { data: anyOwner } = await supabase
@@ -248,42 +255,49 @@ export default function EditShieldPage({ params }: EditPageProps) {
         ? await uploadProfilePhoto(shieldId, photoFile)
         : photoUrl;
 
-      const { error } = await supabase
-        .from('silent_shields')
-        .update({
-          profile_type: category || 'general',
-          Name: name || null,
-          Date_of_Birth: dob || null,
-          Address: address || null,
-          photo_url: updatedPhotoUrl || null,
+      const fields = {
+        profile_type: category || 'general',
+        Name: name || null,
+        Date_of_Birth: dob || null,
+        Address: address || null,
+        photo_url: updatedPhotoUrl || null,
 
-          owner_email: ownerEmail || null,
-          owner_email_consent: ownerEmail ? ownerEmailConsent : false,
+        owner_email: ownerEmail || null,
+        owner_email_consent: ownerEmail ? ownerEmailConsent : false,
 
-          Emergency_Contact_Name: emName || null,
-          Emergency_Contact_Phone: emPhone || null,
-          contact_1_relationship: contact1Relationship || null,
+        Emergency_Contact_Name: emName || null,
+        Emergency_Contact_Phone: emPhone || null,
+        contact_1_relationship: contact1Relationship || null,
 
-          contact_2_name: contact2Name || null,
-          contact_2_phone: contact2Phone || null,
-          contact_2_relationship: contact2Relationship || null,
+        contact_2_name: contact2Name || null,
+        contact_2_phone: contact2Phone || null,
+        contact_2_relationship: contact2Relationship || null,
 
-          conditions: conditions || null,
-          allergies: allergies || null,
-          medications: medications || null,
-          blood_type: bloodType || null,
+        conditions: conditions || null,
+        allergies: allergies || null,
+        medications: medications || null,
+        blood_type: bloodType || null,
 
-          critical_notes: criticalNotes || null,
-          emergency_instructions: emergencyInstructions || null,
+        critical_notes: criticalNotes || null,
+        emergency_instructions: emergencyInstructions || null,
+      };
 
-          last_updated_at: new Date().toISOString(),
-        })
-        .eq('id', shieldId);
+      // Authorize the write server-side by account ownership (bearer) or the
+      // PIN entered to unlock this page — never a direct client DB write.
+      const { data: { session } } = await supabase.auth.getSession();
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (session) headers.Authorization = `Bearer ${session.access_token}`;
 
-      if (error) {
-        console.error(error);
+      const res = await fetch('/api/shield/save', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ shieldId, pin: pinInput || undefined, fields }),
+      });
+
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
         setSaveStatus('error');
-        setSaveError('Failed to save changes. Please check your connection and try again.');
+        setSaveError(body.error || 'Failed to save changes. Please check your connection and try again.');
         return;
       }
 

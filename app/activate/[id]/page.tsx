@@ -11,15 +11,6 @@ type ActivatePageProps = {
 const inputClassName =
   'w-full border border-slate-700 bg-slate-900/60 rounded px-3 py-2 text-sm text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-red-500/60';
 
-async function hashPin(pin: string): Promise<string> {
-  const enc = new TextEncoder();
-  const data = enc.encode(pin);
-  const digest = await crypto.subtle.digest('SHA-256', data);
-  return Array.from(new Uint8Array(digest))
-    .map((b) => b.toString(16).padStart(2, '0'))
-    .join('');
-}
-
 async function uploadProfilePhoto(shieldId: string, file: File) {
   const fileExt = file.name.split('.').pop() || 'jpg';
   const cleanExt = fileExt.toLowerCase().replace(/[^a-z0-9]/g, '');
@@ -130,53 +121,48 @@ export default function ActivateShieldPage({ params }: ActivatePageProps) {
     setErrorMessage(null);
 
     try {
-      const pinHash = await hashPin(pin);
       const photoUrl = photoFile ? await uploadProfilePhoto(shieldId, photoFile) : null;
 
-      const { error } = await supabase.from('silent_shields').insert([
-        {
-          id: shieldId,
+      const fields = {
+        profile_type: category || 'general',
+        Name: name || null,
+        Date_of_Birth: dob || null,
+        Address: address || null,
+        photo_url: photoUrl,
 
-          profile_type: category || 'general',
-          Name: name || null,
-          Date_of_Birth: dob || null,
-          Address: address || null,
-          photo_url: photoUrl,
+        owner_email: ownerEmail || null,
+        owner_email_consent: ownerEmail ? ownerEmailConsent : false,
 
-          owner_email: ownerEmail || null,
-          owner_email_consent: ownerEmail ? ownerEmailConsent : false,
+        Emergency_Contact_Name: emName || null,
+        Emergency_Contact_Phone: emPhone || null,
+        contact_1_relationship: contact1Relationship || null,
 
-          Emergency_Contact_Name: emName || null,
-          Emergency_Contact_Phone: emPhone || null,
-          contact_1_relationship: contact1Relationship || null,
+        contact_2_name: contact2Name || null,
+        contact_2_phone: contact2Phone || null,
+        contact_2_relationship: contact2Relationship || null,
 
-          contact_2_name: contact2Name || null,
-          contact_2_phone: contact2Phone || null,
-          contact_2_relationship: contact2Relationship || null,
+        conditions: conditions || null,
+        allergies: allergies || null,
+        medications: medications || null,
+        blood_type: bloodType || null,
 
-          conditions: conditions || null,
-          allergies: allergies || null,
-          medications: medications || null,
-          blood_type: bloodType || null,
+        critical_notes: criticalNotes || null,
+        emergency_instructions: emergencyInstructions || null,
+      };
 
-          critical_notes: criticalNotes || null,
-          emergency_instructions: emergencyInstructions || null,
+      const res = await fetch('/api/shield/activate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ shieldId, pin, fields }),
+      });
 
-          Activated: true,
-          activated_at: new Date().toISOString(),
-          last_updated_at: new Date().toISOString(),
-          Edit_pin_hash: pinHash,
-        },
-      ]);
-
-      if (error) {
-        if (error.message.includes('duplicate key') || error.code === '23505') {
-          setStatus('error');
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        setStatus('error');
+        if (res.status === 409) {
           setErrorMessage('This Silent Shield has already been activated. Go to the edit page to update your profile.');
         } else {
-          console.error(error);
-          setStatus('error');
-          setErrorMessage('Activation failed. Please check your connection and try again. If this keeps happening, contact support@alliance3dprints.com.');
+          setErrorMessage(body.error || 'Activation failed. Please check your connection and try again. If this keeps happening, contact support@alliance3dprints.com.');
         }
         return;
       }
