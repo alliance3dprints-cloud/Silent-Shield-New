@@ -21,23 +21,37 @@ export default function AuthCallbackPage() {
   const urlNext = searchParams.get('next');
 
   useEffect(() => {
-    supabase.auth.onAuthStateChange((event) => {
-      if (event === 'SIGNED_IN') {
-        window.location.href = getRedirectTarget(urlNext);
-      }
+    let done = false;
+    const go = (target: string) => {
+      if (done) return;
+      done = true;
+      window.location.href = target;
+    };
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      if (event === 'SIGNED_IN') go(getRedirectTarget(urlNext));
     });
 
-    const timeout = setTimeout(() => {
-      supabase.auth.getUser().then(({ data: { user } }) => {
-        if (user) {
-          window.location.href = getRedirectTarget(urlNext);
-        } else {
-          window.location.href = '/account/login';
-        }
-      });
-    }, 3000);
+    // Poll for the session a few times before giving up, so a slow device or
+    // cold network doesn't bounce a valid sign-in back to the login screen.
+    let attempts = 0;
+    const maxAttempts = 8; // ~8s total
+    const poll = setInterval(async () => {
+      attempts += 1;
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        clearInterval(poll);
+        go(getRedirectTarget(urlNext));
+      } else if (attempts >= maxAttempts) {
+        clearInterval(poll);
+        go('/account/login');
+      }
+    }, 1000);
 
-    return () => clearTimeout(timeout);
+    return () => {
+      subscription.unsubscribe();
+      clearInterval(poll);
+    };
   }, [urlNext]);
 
   return (

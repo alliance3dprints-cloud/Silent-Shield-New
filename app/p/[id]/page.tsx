@@ -124,6 +124,32 @@ function getFirstLine(value?: string | null) {
   return value.split('\n').find((line) => line.trim().length > 0)?.trim() || null;
 }
 
+// Words that negate a following condition keyword ("no seizures", "denies
+// asthma", "heart condition resolved"). Kept conservative so we never hide a
+// real condition — only suppress clearly-negated mentions.
+const NEGATION_WORDS = [
+  'no', 'not', 'without', 'never', 'denies', 'denied', 'negative',
+  'free of', 'ruled out', 'absent', 'none',
+];
+const POST_NEGATIONS = ['resolved', 'ruled out', 'in remission'];
+
+// True only if `keyword` appears in `text` without a negation right before it
+// (within ~14 chars) or a clearing word right after it.
+function mentions(text: string, keyword: string): boolean {
+  let idx = text.indexOf(keyword);
+  while (idx !== -1) {
+    const before = text.slice(Math.max(0, idx - 14), idx);
+    const after = text.slice(idx + keyword.length, idx + keyword.length + 16);
+    const negatedBefore = NEGATION_WORDS.some((n) =>
+      new RegExp(`\\b${n}\\b[\\s\\w-]{0,10}$`).test(before),
+    );
+    const clearedAfter = POST_NEGATIONS.some((p) => after.includes(p));
+    if (!negatedBefore && !clearedAfter) return true;
+    idx = text.indexOf(keyword, idx + keyword.length);
+  }
+  return false;
+}
+
 function buildAlertBadges(data: AlertBadgeSource) {
   const allergiesText = (data.allergies || '').toLowerCase().trim();
   const hasNoAllergies = isNoAllergies(data.allergies);
@@ -148,55 +174,32 @@ function buildAlertBadges(data: AlertBadgeSource) {
     if (!badges.includes(label)) badges.push(label);
   }
 
+  const has = (kw: string) => mentions(combinedText, kw);
+
   if (category === 'law_enforcement') addBadge('LAW ENFORCEMENT');
   if (category === 'first_responder') addBadge('FIRST RESPONDER');
   if (category === 'veteran') addBadge('VETERAN');
   if (category === 'medical') addBadge('MEDICAL ALERT');
   if (category === 'senior') addBadge('SENIOR SAFETY');
 
-  if (combinedText.includes('nonverbal') || combinedText.includes('non-verbal')) {
-    addBadge('NONVERBAL');
-  }
-
-  if (combinedText.includes('autism') || combinedText.includes('autistic')) {
-    addBadge('AUTISM');
-  }
-
-  if (combinedText.includes('diabetes') || combinedText.includes('diabetic')) {
-    addBadge('DIABETIC');
-  }
-
-  if (combinedText.includes('insulin')) {
-    addBadge('INSULIN');
-  }
-
-  if (combinedText.includes('epilepsy') || combinedText.includes('seizure')) {
-    addBadge('SEIZURE RISK');
-  }
+  if (has('nonverbal') || has('non-verbal')) addBadge('NONVERBAL');
+  if (has('autism') || has('autistic')) addBadge('AUTISM');
+  if (has('diabetes') || has('diabetic')) addBadge('DIABETIC');
+  if (has('insulin')) addBadge('INSULIN');
+  if (has('epilepsy') || has('seizure')) addBadge('SEIZURE RISK');
 
   const hasAllergies = Boolean(allergiesText && !hasNoAllergies);
-
-  if (
-    hasAllergies ||
-    combinedText.includes('severe allergy') ||
-    combinedText.includes('allergic to')
-  ) {
+  if (hasAllergies || has('severe allergy') || has('allergic to')) {
     addBadge('ALLERGY');
   }
 
-  if (combinedText.includes('dementia')) addBadge('DEMENTIA');
-  if (combinedText.includes('alzheimer')) addBadge('ALZHEIMER’S');
-  if (combinedText.includes('adhd')) addBadge('ADHD');
-  if (combinedText.includes('asthma')) addBadge('ASTHMA');
-  if (combinedText.includes('heart')) addBadge('HEART CONDITION');
-
-  if (combinedText.includes('deaf') || combinedText.includes('hearing')) {
-    addBadge('HEARING IMPAIRED');
-  }
-
-  if (combinedText.includes('blind') || combinedText.includes('vision')) {
-    addBadge('VISION IMPAIRED');
-  }
+  if (has('dementia')) addBadge('DEMENTIA');
+  if (has('alzheimer')) addBadge('ALZHEIMER’S');
+  if (has('adhd')) addBadge('ADHD');
+  if (has('asthma')) addBadge('ASTHMA');
+  if (has('heart')) addBadge('HEART CONDITION');
+  if (has('deaf') || has('hearing')) addBadge('HEARING IMPAIRED');
+  if (has('blind') || has('vision')) addBadge('VISION IMPAIRED');
 
   return badges.slice(0, 6);
 }

@@ -371,12 +371,14 @@ export default function EditShieldPage({ params }: EditPageProps) {
         </div>
 
         <h1 className="mt-3 text-center text-3xl font-bold text-white tracking-tight">
-          Edit Silent Shield
+          {verified && name ? `Editing ${name}` : 'Edit Silent Shield'}
         </h1>
 
-        <p className="text-center text-xs text-slate-400 mt-1">
-          Shield ID: <span className="font-mono text-slate-200">{shieldId}</span>
-        </p>
+        {verified && (
+          <p className="text-center text-xs text-slate-400 mt-1">
+            Keep this emergency profile accurate and up to date.
+          </p>
+        )}
 
         {isLoggedIn && (
           <Link

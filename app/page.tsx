@@ -118,6 +118,32 @@ export default function HomePage() {
           </div>
         </section>
 
+        <section className="rounded-2xl bg-slate-950/90 border border-slate-700 shadow-xl px-6 py-6 space-y-4">
+          <h2 className="text-sm font-bold text-slate-300 uppercase tracking-[0.18em]">
+            Simple Pricing
+          </h2>
+
+          <div className="rounded-xl border border-slate-700 bg-slate-800/40 p-4 space-y-1">
+            <div className="flex items-baseline justify-between gap-3">
+              <p className="text-sm font-semibold text-white">Emergency Profile</p>
+              <p className="text-sm font-bold text-emerald-400">Always Free</p>
+            </div>
+            <p className="text-xs text-slate-400 leading-relaxed">
+              Full profile, editing, PIN recovery, and unlimited scans. No subscription needed to save a life.
+            </p>
+          </div>
+
+          <div className="rounded-xl border border-red-500/30 bg-red-500/5 p-4 space-y-1">
+            <div className="flex items-baseline justify-between gap-3">
+              <p className="text-sm font-semibold text-white">Premium</p>
+              <p className="text-sm font-bold text-white">$3.99<span className="text-xs font-normal text-slate-400">/mo</span></p>
+            </div>
+            <p className="text-xs text-slate-400 leading-relaxed">
+              Instant email alerts when your shield is scanned, plus scan history. Optional — cancel anytime.
+            </p>
+          </div>
+        </section>
+
         <footer className="text-center space-y-2 pb-4">
           <p className="text-[11px] text-slate-600 leading-relaxed">
             The emergency profile is always free and fully functional.
