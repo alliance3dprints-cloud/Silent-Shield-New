@@ -70,7 +70,7 @@ export async function notifyOwners(shieldId: string, eventType: NotificationEven
               if (!email) {
                 await logNotification({ shieldId, ownerId: owner_id, channel: 'email', eventType, status: 'failed', errorMessage: 'No email address on owner account' });
               } else {
-                await sendEmailNotification({ to: email, shieldName, shieldId });
+                await sendEmailNotification({ to: email, shieldName, shieldId, ownerId: owner_id });
                 await updateRateLimit(shieldId, 'email');
                 await logNotification({ shieldId, ownerId: owner_id, channel: 'email', eventType, status: 'sent' });
               }
