@@ -624,12 +624,18 @@ export default async function PublicShieldPage({ params, searchParams }: PublicP
             In a life-threatening emergency, call 911.
           </p>
 
-          <div className="flex justify-center">
+          <div className="flex flex-col items-center gap-2">
             <Link
               href="/account"
               className="inline-flex items-center rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-100 transition"
             >
               Owner Portal
+            </Link>
+            <Link
+              href={`/claim/${shieldId}`}
+              className="text-[11px] text-slate-400 hover:text-slate-600 underline underline-offset-2 transition"
+            >
+              Own this shield? Claim it to your account
             </Link>
           </div>
         </footer>
