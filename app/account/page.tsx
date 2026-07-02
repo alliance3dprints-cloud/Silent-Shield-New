@@ -82,6 +82,8 @@ export default function AccountPage() {
   const [checkoutPending, setCheckoutPending] = useState(false);
   const [scanHistory, setScanHistory] = useState<ScanEntry[]>([]);
   const [upgradeError, setUpgradeError] = useState<string | null>(null);
+  const [confirmRemove, setConfirmRemove] = useState<string | null>(null);
+  const [removingId, setRemovingId] = useState<string | null>(null);
 
   const loadSubscription = useCallback(async (token: string) => {
     const res = await fetch('/api/stripe/subscription-status', {
@@ -203,6 +205,24 @@ export default function AccountPage() {
       setTimeout(() => setSavedPref((p) => (p === shieldId ? null : p)), 2000);
     }
     setSavingPref(null);
+  }
+
+  async function handleRemove(shieldId: string) {
+    setRemovingId(shieldId);
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) { setRemovingId(null); return; }
+
+    const res = await fetch('/api/shield/remove', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
+      body: JSON.stringify({ shieldId }),
+    });
+
+    if (res.ok) {
+      setShields((prev) => prev.filter((s) => s.shield_id !== shieldId));
+      setConfirmRemove(null);
+    }
+    setRemovingId(null);
   }
 
   async function handleUpgrade(plan: 'monthly' | 'annual') {
@@ -403,6 +423,41 @@ export default function AccountPage() {
                         </div>
                       )}
                     </div>
+
+                    {confirmRemove === item.shield_id ? (
+                      <div className="rounded-lg border border-red-500/30 bg-red-500/5 p-3 space-y-2">
+                        <p className="text-xs text-slate-300 leading-relaxed">
+                          Remove <span className="font-semibold text-white">{name}</span> from your account?
+                          The emergency profile stays active — you can re-claim it later with its PIN.
+                        </p>
+                        <div className="flex gap-2">
+                          <button
+                            type="button"
+                            onClick={() => handleRemove(item.shield_id)}
+                            disabled={removingId === item.shield_id}
+                            className="flex-1 rounded-lg bg-red-500 hover:bg-red-600 px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-60 transition"
+                          >
+                            {removingId === item.shield_id ? 'Removing…' : 'Remove'}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setConfirmRemove(null)}
+                            disabled={removingId === item.shield_id}
+                            className="flex-1 rounded-lg border border-slate-600 bg-slate-900/60 px-3 py-1.5 text-xs font-semibold text-slate-200 hover:bg-slate-800 transition"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => setConfirmRemove(item.shield_id)}
+                        className="block w-full text-center text-[11px] text-slate-500 hover:text-slate-300 transition"
+                      >
+                        Remove from account
+                      </button>
+                    )}
                   </div>
                 );
               })}
