@@ -140,24 +140,30 @@ export default function ClaimShieldPage({ params }: ClaimPageProps) {
             <span className="font-semibold text-white">{claimedEmail}</span>.
           </p>
 
-          <p className="text-xs text-slate-400 leading-relaxed">
-            Sign in to My Account to manage this shield, view scan notifications, and recover your PIN if you forget it.
-          </p>
+          <div className="rounded-xl border border-red-500/40 bg-red-500/5 p-4 text-left space-y-2">
+            <p className="text-sm font-bold text-white">
+              Turn on scan alerts with Premium
+            </p>
+            <p className="text-xs leading-relaxed text-slate-300">
+              Get an instant email the moment someone scans your shield, plus full scan history.
+              <span className="text-slate-400"> $3.99/mo — cancel anytime.</span>
+            </p>
+          </div>
 
-          <div className="space-y-3 pt-2">
+          <div className="space-y-3 pt-1">
             {signedInUser ? (
               <Link
                 href="/account"
-                className="block w-full rounded-lg bg-red-500 hover:bg-red-600 px-4 py-2.5 text-sm font-semibold text-white transition"
+                className="block w-full rounded-lg bg-red-500 hover:bg-red-600 px-4 py-3 text-sm font-bold text-white transition shadow-lg shadow-red-500/20"
               >
-                Go to My Account
+                Continue to Activate Premium →
               </Link>
             ) : (
               <a
-                href={`/account/login`}
-                className="block w-full rounded-lg bg-red-500 hover:bg-red-600 px-4 py-2.5 text-sm font-semibold text-white transition"
+                href={`/account/login?claim=${shieldId}`}
+                className="block w-full rounded-lg bg-red-500 hover:bg-red-600 px-4 py-3 text-sm font-bold text-white transition shadow-lg shadow-red-500/20"
               >
-                Sign In to My Account
+                Sign In to Activate Alerts →
               </a>
             )}
 
@@ -165,7 +171,7 @@ export default function ClaimShieldPage({ params }: ClaimPageProps) {
               href={`/edit/${shieldId}`}
               className="block text-center text-xs text-slate-400 hover:text-slate-200 underline underline-offset-2"
             >
-              Edit this shield
+              Not now — edit this shield
             </Link>
           </div>
         </div>

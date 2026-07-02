@@ -264,9 +264,30 @@ export default function AccountPage() {
   const renewalDate = formatDate(subscription?.current_period_end ?? null);
   const willCancel = subscription?.cancel_at_period_end === true;
 
+  const showPremiumNudge =
+    !isPremium && !subLoading && !checkoutPending && shields.length > 0;
+
   return (
     <main className="min-h-screen bg-slate-900 px-4 py-6">
       <div className="mx-auto w-full max-w-md space-y-6">
+
+        {/* Premium nudge — surfaced until the owner subscribes */}
+        {showPremiumNudge && (
+          <a
+            href="#premium"
+            className="flex items-center gap-3 rounded-2xl border border-red-500/40 bg-red-500/10 px-5 py-4 transition hover:bg-red-500/15"
+          >
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-red-500/20 border border-red-500/40">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="h-4 w-4 text-red-300" aria-hidden="true">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M13 2 3 14h7l-1 8 10-12h-7l1-8Z" />
+              </svg>
+            </span>
+            <span className="flex-1 min-w-0">
+              <span className="block text-sm font-bold text-white">You&apos;re not getting scan alerts yet</span>
+              <span className="block text-xs text-slate-300">Activate Premium to know when your shield is scanned →</span>
+            </span>
+          </a>
+        )}
 
         {/* Header */}
         <div className="rounded-2xl bg-slate-950/90 border border-slate-700 shadow-xl px-6 py-7 space-y-5">
@@ -400,7 +421,7 @@ export default function AccountPage() {
         </div>
 
         {/* Premium Section */}
-        <div className="rounded-2xl border shadow-xl overflow-hidden">
+        <div id="premium" className="scroll-mt-6 rounded-2xl border shadow-xl overflow-hidden">
           {checkoutPending ? (
             <div className="bg-slate-950/90 border-slate-700 px-6 py-8 text-center space-y-3">
               <div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-slate-600 border-t-red-500" />
