@@ -677,8 +677,11 @@ function Section({
   children: React.ReactNode;
 }) {
   return (
-    <div className="pt-3 border-t border-slate-800 space-y-4">
-      <h3 className="text-sm font-semibold text-red-300">{title}</h3>
+    <div className="rounded-xl border border-slate-700 bg-slate-800/40 p-4 space-y-4">
+      <h3 className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.14em] text-slate-300">
+        <span className="h-1.5 w-1.5 rounded-full bg-red-400" />
+        {title}
+      </h3>
       {children}
     </div>
   );
