@@ -370,7 +370,11 @@ export default async function PublicShieldPage({ params, searchParams }: PublicP
   const category = formatCategory(data.profile_type);
   const alertBadges = buildAlertBadges(data);
 
-  const hasCritical = data.critical_notes || data.Medical_Info;
+  // Red "Medical Alerts" is reserved for true critical notes. Legacy shields
+  // store general medical info in Medical_Info — that renders in a calm,
+  // neutral "Medical Information" section instead of the alarming red box.
+  const hasCritical = data.critical_notes;
+  const hasLegacyMedical = data.Medical_Info;
 
   const hasMedical =
     data.conditions ||
@@ -380,7 +384,7 @@ export default async function PublicShieldPage({ params, searchParams }: PublicP
 
   const hasInstructions = data.emergency_instructions || data.Notes;
 
-  const showQuickSummary = !hasCritical && !hasInstructions;
+  const showQuickSummary = !hasCritical && !hasLegacyMedical && !hasMedical && !hasInstructions;
 
   const quickSummaryItems = [
     age !== null ? `Age ${age}` : null,
@@ -490,7 +494,7 @@ export default async function PublicShieldPage({ params, searchParams }: PublicP
           </section>
         )}
 
-        {/* Medical Alerts */}
+        {/* Medical Alerts — red, reserved for true critical notes */}
         {hasCritical && (
           <section className="rounded-2xl shadow-sm bg-white p-5 space-y-3">
             <h2 className="flex items-center gap-2 text-base font-bold text-red-600 uppercase tracking-[0.14em]">
@@ -498,21 +502,29 @@ export default async function PublicShieldPage({ params, searchParams }: PublicP
               Medical Alerts
             </h2>
             <div className="rounded-xl border border-red-200 bg-red-50 p-4">
-              {data.critical_notes && (
-                <p className="text-base leading-relaxed whitespace-pre-line text-slate-900">
-                  {data.critical_notes}
-                </p>
-              )}
-              {!data.critical_notes && data.Medical_Info && (
-                <p className="text-base leading-relaxed whitespace-pre-line text-slate-900">
-                  {data.Medical_Info}
-                </p>
-              )}
+              <p className="text-base leading-relaxed whitespace-pre-line text-slate-900">
+                {data.critical_notes}
+              </p>
             </div>
           </section>
         )}
 
-        {/* Health & Safety */}
+        {/* Medical Information — neutral section for legacy Medical_Info blobs */}
+        {hasLegacyMedical && (
+          <section className="rounded-2xl shadow-sm bg-white p-5 space-y-3">
+            <h2 className="flex items-center gap-2 text-base font-bold text-slate-700 uppercase tracking-[0.14em]">
+              <Heart className="h-5 w-5 text-red-500" aria-hidden="true" />
+              Medical Information
+            </h2>
+            <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+              <p className="text-base leading-relaxed whitespace-pre-line text-slate-900">
+                {data.Medical_Info}
+              </p>
+            </div>
+          </section>
+        )}
+
+        {/* Health & Safety — structured fields (newer shields) */}
         {hasMedical && (
           <section className="rounded-2xl shadow-sm bg-white p-5 space-y-3">
             <h2 className="flex items-center gap-2 text-base font-bold text-slate-700 uppercase tracking-[0.14em]">
@@ -626,18 +638,19 @@ export default async function PublicShieldPage({ params, searchParams }: PublicP
 
           <div className="flex flex-col items-center gap-2">
             <Link
-              href="/account"
+              href={`/edit/${shieldId}`}
               className="inline-flex items-center rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-100 transition"
             >
-              Owner Portal
+              Owner? Edit this Silent Shield
             </Link>
             <Link
               href={`/claim/${shieldId}`}
               className="text-[11px] text-slate-400 hover:text-slate-600 underline underline-offset-2 transition"
             >
-              Own this shield? Claim it to your account
+              Claim it to your account for scan alerts &amp; PIN recovery
             </Link>
             <div className="flex justify-center gap-3 pt-1 text-[11px] text-slate-400">
+              <Link href="/account" className="hover:text-slate-600 underline underline-offset-2">Owner Portal</Link>
               <Link href="/privacy" className="hover:text-slate-600 underline underline-offset-2">Privacy</Link>
               <Link href="/terms" className="hover:text-slate-600 underline underline-offset-2">Terms</Link>
             </div>
