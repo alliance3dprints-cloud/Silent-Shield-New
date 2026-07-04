@@ -4,21 +4,20 @@
   Suggested Subject line:  Your Silent Shield sign-in link
 
   Notes:
-  - The logo loads from your deployed app; it only appears once the new code is
-    live at silent-shield-app.vercel.app. Until then (and in image-blocking
-    clients like Gmail-by-default), the text "SILENT SHIELD" wordmark shows instead.
+  - Uses a text wordmark (no logo image) so it renders reliably in every email
+    client with no image-blocking or hosting dependency.
   - {{ .ConfirmationURL }} is Supabase's variable for the one-time sign-in link.
 -->
 <div style="margin:0;padding:0;background:#f1f5f9;">
   <div style="max-width:480px;margin:0 auto;padding:32px 20px;font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;">
     <div style="background:#ffffff;border:1px solid #e2e8f0;border-radius:16px;padding:32px 28px;text-align:center;">
 
-      <!-- Brand -->
-      <img src="https://silent-shield-app.vercel.app/silent-shield-logo.png"
-           alt="Silent Shield" width="56" height="56"
-           style="display:block;margin:0 auto 12px;height:56px;width:56px;" />
-      <div style="font-size:12px;font-weight:700;letter-spacing:0.22em;text-transform:uppercase;color:#ef4444;">
-        Silent Shield
+      <!-- Brand wordmark (text renders reliably in every client) -->
+      <div style="display:inline-flex;align-items:center;gap:8px;">
+        <span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:#ef4444;"></span>
+        <span style="font-size:15px;font-weight:800;letter-spacing:0.2em;text-transform:uppercase;color:#0f172a;">
+          Silent<span style="color:#ef4444;">Shield</span>
+        </span>
       </div>
 
       <!-- Heading -->
