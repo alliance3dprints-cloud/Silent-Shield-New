@@ -8,8 +8,10 @@ export const metadata = {
 
 import { headers } from 'next/headers';
 import Link from 'next/link';
+import { waitUntil } from '@vercel/functions';
 import { Phone, AlertCircle, Heart, ClipboardList, MapPin, Users } from 'lucide-react';
 import { supabase } from '@/lib/supabaseClient';
+import { notifyOwners } from '@/lib/notifications';
 import { AddressReveal } from './AddressReveal';
 
 type PublicPageProps = {
@@ -254,22 +256,23 @@ export default async function PublicShieldPage({ params, searchParams }: PublicP
     const isRealScan = !ownerPreview && !isBotUserAgent(userAgent);
 
     if (isRealScan) {
-      supabase
-        .from('scan_events')
-        .insert({ shield_id: shieldId, ip_address: ip, user_agent: userAgent })
-        .then(({ error: logError }) => {
-          if (logError) console.error('Scan log failed:', logError);
-        });
-
-      // Fire notification via API route so it runs to completion independent of this response stream
-      const base = process.env.VERCEL_URL
-        ? `https://${process.env.VERCEL_URL}`
-        : process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000';
-      fetch(`${base}/api/shield/notify`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ shieldId }),
-      }).catch(() => {});
+      // Log the scan and notify owners directly (no fragile internal fetch).
+      // waitUntil keeps the serverless function alive until this finishes, so
+      // the work isn't dropped when the page response is sent — but it doesn't
+      // block the profile from rendering for the responder.
+      waitUntil(
+        (async () => {
+          try {
+            const { error: logError } = await supabase
+              .from('scan_events')
+              .insert({ shield_id: shieldId, ip_address: ip, user_agent: userAgent });
+            if (logError) console.error('Scan log failed:', logError);
+          } catch (e) {
+            console.error('Scan log threw:', e);
+          }
+          await notifyOwners(shieldId, 'scan');
+        })(),
+      );
     }
   }
 
