@@ -22,6 +22,7 @@ type Stats = {
 export default function AdminPage() {
   const [state, setState] = useState<'loading' | 'ok' | 'denied' | 'signin'>('loading');
   const [stats, setStats] = useState<Stats | null>(null);
+  const [health, setHealth] = useState<'checking' | 'up' | 'down'>('checking');
 
   useEffect(() => {
     async function load() {
@@ -37,6 +38,15 @@ export default function AdminPage() {
 
       setStats(await res.json());
       setState('ok');
+
+      // Live system health (this-moment status; not a substitute for an
+      // external monitor that alerts you when you're away).
+      try {
+        const h = await fetch('/api/health', { cache: 'no-store' });
+        setHealth(h.ok ? 'up' : 'down');
+      } catch {
+        setHealth('down');
+      }
     }
     load();
   }, []);
@@ -77,7 +87,19 @@ export default function AdminPage() {
             <p className="text-[11px] font-semibold tracking-[0.2em] uppercase text-red-400">Silent Shield</p>
             <h1 className="text-2xl font-bold text-white tracking-tight">Admin Dashboard</h1>
           </div>
-          <Link href="/account" className="text-xs text-slate-400 hover:text-slate-200 underline underline-offset-2">My Account</Link>
+          <div className="flex items-center gap-4">
+            <span className="inline-flex items-center gap-2 text-xs font-medium">
+              <span className={`h-2 w-2 rounded-full ${
+                health === 'up' ? 'bg-emerald-400' : health === 'down' ? 'bg-red-500' : 'bg-slate-500'
+              } ${health === 'up' ? 'animate-pulse' : ''}`} />
+              <span className={
+                health === 'up' ? 'text-emerald-400' : health === 'down' ? 'text-red-400' : 'text-slate-400'
+              }>
+                {health === 'up' ? 'Operational' : health === 'down' ? 'System issue' : 'Checking…'}
+              </span>
+            </span>
+            <Link href="/account" className="text-xs text-slate-400 hover:text-slate-200 underline underline-offset-2">My Account</Link>
+          </div>
         </header>
 
         {/* Revenue */}
