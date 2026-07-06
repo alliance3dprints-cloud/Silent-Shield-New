@@ -47,8 +47,15 @@ export async function POST(req: NextRequest) {
 
     await clearPinAttempts(shieldId, ip);
 
+    // Is this shield already linked to an account? (So the edit page can show
+    // the right call-to-action instead of "Claim" on an already-claimed shield.)
+    const { count: ownerCount } = await db
+      .from('shield_owners')
+      .select('id', { count: 'exact', head: true })
+      .eq('shield_id', shieldId);
+
     const { Edit_pin_hash, ...safeRow } = row;
-    return NextResponse.json({ data: safeRow });
+    return NextResponse.json({ data: safeRow, claimed: (ownerCount ?? 0) > 0 });
   } catch {
     return NextResponse.json({ error: 'Server error' }, { status: 500 });
   }

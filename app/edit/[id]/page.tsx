@@ -221,8 +221,9 @@ export default function EditShieldPage({ params }: EditPageProps) {
         return;
       }
 
-      const { data: verifiedRow } = await res.json() as { data: ShieldRow };
+      const { data: verifiedRow, claimed } = await res.json() as { data: ShieldRow; claimed?: boolean };
       populateForm(verifiedRow);
+      if (claimed) setIsClaimed(true);
       setVerified(true);
     } catch (err) {
       console.error(err);
@@ -410,13 +411,37 @@ export default function EditShieldPage({ params }: EditPageProps) {
           </form>
         ) : (
           <form onSubmit={handleSave} className="space-y-4">
-            {!isClaimed && !isOwner && (
-              <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-4 space-y-2">
-                <p className="text-sm font-semibold text-emerald-200">
-                  Want to manage this shield from your account?
-                </p>
+            {isOwner ? (
+              <div className="rounded-xl border border-slate-700 bg-slate-800/60 p-4 space-y-2">
+                <p className="text-sm font-semibold text-white">This shield is on your account ✓</p>
                 <p className="text-xs text-slate-400 leading-relaxed">
-                  Claim this shield to recover your PIN by email, get scan notifications,
+                  Manage it, turn on scan alerts, and see all your shields from your dashboard.
+                </p>
+                <Link
+                  href="/account"
+                  className="inline-block mt-1 rounded-lg bg-red-500 hover:bg-red-600 px-4 py-2 text-xs font-semibold text-white transition"
+                >
+                  Go to My Dashboard →
+                </Link>
+              </div>
+            ) : isClaimed ? (
+              <div className="rounded-xl border border-slate-700 bg-slate-800/60 p-4 space-y-2">
+                <p className="text-sm font-semibold text-white">This shield is linked to an account</p>
+                <p className="text-xs text-slate-400 leading-relaxed">
+                  Sign in to manage it, turn on scan alerts, and recover your PIN by email.
+                </p>
+                <Link
+                  href="/account/login"
+                  className="inline-block mt-1 rounded-lg bg-red-500 hover:bg-red-600 px-4 py-2 text-xs font-semibold text-white transition"
+                >
+                  Sign In →
+                </Link>
+              </div>
+            ) : (
+              <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-4 space-y-2">
+                <p className="text-sm font-semibold text-emerald-200">Want scan alerts &amp; PIN recovery?</p>
+                <p className="text-xs text-slate-400 leading-relaxed">
+                  Claim this shield to get an email the moment it&apos;s scanned, recover your PIN,
                   and manage all your shields in one place.
                 </p>
                 <Link
