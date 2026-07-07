@@ -648,7 +648,7 @@ export default async function PublicShieldPage({ params, searchParams }: PublicP
           </p>
 
           <p className="text-[11px] font-semibold text-red-500 leading-relaxed">
-            In a life-threatening emergency, call your local emergency number (911 in the US, 999 in the UK, 112 in the EU).
+            In a life-threatening emergency, call your local emergency number.
           </p>
 
           <div className="flex flex-col items-center gap-2">
