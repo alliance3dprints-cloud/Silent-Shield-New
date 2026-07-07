@@ -20,11 +20,6 @@ export async function sendEmailNotification({
 
   const resend = new Resend(apiKey);
 
-  const scannedAt = new Date().toLocaleString('en-US', {
-    dateStyle: 'medium',
-    timeStyle: 'short',
-  });
-
   const manageUrl = `${base}/account`;
   const unsubUrl = `${base}/api/unsubscribe?token=${makeUnsubscribeToken(shieldId, ownerId)}`;
 
@@ -55,12 +50,13 @@ export async function sendEmailNotification({
           <p style="margin:0 0 4px;font-size:12px;color:#94a3b8;font-weight:600;text-transform:uppercase;letter-spacing:0.1em;">Shield</p>
           <p style="margin:0;font-size:15px;font-weight:600;color:#0f172a;">${shieldName}</p>
 
-          <p style="margin:12px 0 4px;font-size:12px;color:#94a3b8;font-weight:600;text-transform:uppercase;letter-spacing:0.1em;">Scanned At</p>
-          <p style="margin:0;font-size:14px;color:#0f172a;">${scannedAt}</p>
+          <p style="margin:12px 0 4px;font-size:12px;color:#94a3b8;font-weight:600;text-transform:uppercase;letter-spacing:0.1em;">When</p>
+          <p style="margin:0;font-size:14px;color:#0f172a;">Just now — this alert was sent the moment the shield was scanned.</p>
         </div>
 
         <p style="font-size:12px;color:#94a3b8;margin:0 0 4px;">
           If you weren't expecting this scan, make sure the right person is wearing this shield.
+          Exact scan times are in your <a href="${manageUrl}" style="color:#ef4444;">scan history</a>, shown in your local time.
         </p>
 
         <p style="font-size:11px;color:#cbd5e1;margin:24px 0 0;border-top:1px solid #e2e8f0;padding-top:16px;">
