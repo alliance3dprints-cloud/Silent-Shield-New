@@ -100,8 +100,16 @@ function digitsOnly(phone?: string | null) {
   return phone ? phone.replace(/\D/g, '') : '';
 }
 
+function isInternational(phone?: string | null) {
+  return Boolean(phone && phone.trim().startsWith('+') && !phone.trim().startsWith('+1'));
+}
+
 function formatPhone(phone?: string | null) {
   if (!phone) return '';
+
+  // Numbers entered with a non-US country code: show exactly as the owner
+  // wrote them — never force US formatting onto an international number.
+  if (isInternational(phone)) return phone.trim();
 
   const digits = digitsOnly(phone);
 
@@ -117,8 +125,12 @@ function formatPhone(phone?: string | null) {
 }
 
 function telHref(phone?: string | null) {
+  if (!phone) return '#';
+  // Preserve a leading + so international numbers dial correctly
+  // (tel:+442079460958, not tel:442079460958).
+  const plus = phone.trim().startsWith('+') ? '+' : '';
   const digits = digitsOnly(phone);
-  return digits ? `tel:${digits}` : '#';
+  return digits ? `tel:${plus}${digits}` : '#';
 }
 
 function getFirstLine(value?: string | null) {
@@ -636,7 +648,7 @@ export default async function PublicShieldPage({ params, searchParams }: PublicP
           </p>
 
           <p className="text-[11px] font-semibold text-red-500 leading-relaxed">
-            In a life-threatening emergency, call 911.
+            In a life-threatening emergency, call your local emergency number (911 in the US, 999 in the UK, 112 in the EU).
           </p>
 
           <div className="flex flex-col items-center gap-2">

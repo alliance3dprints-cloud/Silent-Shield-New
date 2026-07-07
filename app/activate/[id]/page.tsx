@@ -358,7 +358,7 @@ export default function ActivateShieldPage({ params }: ActivatePageProps) {
               label="Phone"
               value={emPhone}
               onChange={setEmPhone}
-              placeholder="Example: (214) 555-1234"
+              placeholder="US: (214) 555-1234 · Outside US: +44 20 7946 0958"
             />
           </Section>
 
@@ -382,7 +382,7 @@ export default function ActivateShieldPage({ params }: ActivatePageProps) {
                 label="Phone"
                 value={contact2Phone}
                 onChange={setContact2Phone}
-                placeholder="Example: (214) 555-1234"
+                placeholder="US: (214) 555-1234 · Outside US: +44 20 7946 0958"
               />
             </Section>
           ) : (

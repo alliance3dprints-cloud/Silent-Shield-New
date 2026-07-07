@@ -493,7 +493,7 @@ export default function EditShieldPage({ params }: EditPageProps) {
                 />
               </FieldLabel>
 
-              <TextInput label="Phone" value={emPhone} onChange={setEmPhone} />
+              <TextInput label="Phone" value={emPhone} onChange={setEmPhone} placeholder="US: (214) 555-1234 · Outside US: +44 20 7946 0958" />
             </Section>
 
             <Section title="Secondary Contact">
@@ -506,7 +506,7 @@ export default function EditShieldPage({ params }: EditPageProps) {
                 />
               </FieldLabel>
 
-              <TextInput label="Phone" value={contact2Phone} onChange={setContact2Phone} />
+              <TextInput label="Phone" value={contact2Phone} onChange={setContact2Phone} placeholder="US: (214) 555-1234 · Outside US: +44 20 7946 0958" />
             </Section>
 
             <Section title="Medical Information">
@@ -680,16 +680,19 @@ function TextInput({
   label,
   value,
   onChange,
+  placeholder,
 }: {
   label: string;
   value: string;
   onChange: (value: string) => void;
+  placeholder?: string;
 }) {
   return (
     <FieldLabel label={label}>
       <input
         value={value}
         onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
         className={inputClassName}
       />
     </FieldLabel>
