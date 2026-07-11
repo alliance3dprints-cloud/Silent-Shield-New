@@ -4,6 +4,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabaseClient';
+import { isValidEmail } from '@/lib/email';
 
 type ClaimPageProps = {
   params: { id: string };
@@ -83,8 +84,8 @@ export default function ClaimShieldPage({ params }: ClaimPageProps) {
     }
 
     // Unauthenticated path: email + PIN, service role handles user creation
-    if (!email || !email.includes('@')) {
-      setError('Please enter a valid email address.');
+    if (!isValidEmail(email)) {
+      setError('Please enter a valid email address (check for extra dots or spaces).');
       return;
     }
 

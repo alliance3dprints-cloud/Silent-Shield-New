@@ -5,6 +5,7 @@ import { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabaseClient';
+import { isValidEmail } from '@/lib/email';
 
 const inputClassName =
   'w-full border border-slate-700 bg-slate-900/60 rounded px-3 py-2 text-sm text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-red-500/60';
@@ -33,8 +34,8 @@ export default function LoginPage() {
     e.preventDefault();
     setError(null);
 
-    if (!email || !email.includes('@')) {
-      setError('Please enter a valid email address.');
+    if (!isValidEmail(email)) {
+      setError('Please enter a valid email address (check for extra dots or spaces).');
       return;
     }
 

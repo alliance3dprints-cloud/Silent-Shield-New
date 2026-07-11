@@ -407,6 +407,7 @@ export default function AccountPage() {
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-semibold text-white truncate">{name}</p>
                         <p className="text-xs text-slate-400">{category}</p>
+                        <p className="text-[10px] text-slate-500 font-mono mt-0.5">ID: {item.shield_id}</p>
                       </div>
                     </div>
 

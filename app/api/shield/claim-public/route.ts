@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServiceRoleClient } from '@/lib/supabaseServiceRole';
 import { verifyPin, hashPin } from '@/lib/pin';
 import { setMarketingOptIn } from '@/lib/marketing';
+import { normalizeEmail, isValidEmail } from '@/lib/email';
 
 export async function POST(req: NextRequest) {
   try {
@@ -11,10 +12,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
-    const emailLower = email.toLowerCase().trim();
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(emailLower)) {
-      return NextResponse.json({ error: 'Invalid email address' }, { status: 400 });
+    const emailLower = normalizeEmail(email);
+    if (!isValidEmail(emailLower)) {
+      return NextResponse.json({ error: 'Please enter a valid email address (check for extra dots or spaces).' }, { status: 400 });
     }
 
     const db = getServiceRoleClient();

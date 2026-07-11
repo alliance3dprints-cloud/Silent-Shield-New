@@ -366,6 +366,10 @@ export default function EditShieldPage({ params }: EditPageProps) {
           </p>
         )}
 
+        <p className="text-center text-[10px] text-slate-500 font-mono">
+          Shield ID: {shieldId}
+        </p>
+
 
         {!verified ? (
           <form onSubmit={handleVerifyPin} className="space-y-4">

@@ -669,6 +669,10 @@ export default async function PublicShieldPage({ params, searchParams }: PublicP
               <Link href="/privacy" className="hover:text-slate-600 underline underline-offset-2">Privacy</Link>
               <Link href="/terms" className="hover:text-slate-600 underline underline-offset-2">Terms</Link>
             </div>
+            <p className="pt-1 text-[10px] text-slate-400">
+              Shield ID: <span className="font-mono text-slate-500">{shieldId}</span>
+              <span className="block">Include this ID when contacting support.</span>
+            </p>
           </div>
         </footer>
       </div>
