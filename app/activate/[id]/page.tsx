@@ -68,6 +68,7 @@ export default function ActivateShieldPage({ params }: ActivatePageProps) {
   const [status, setStatus] =
     useState<'idle' | 'activating' | 'success' | 'error'>('idle');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [photoWarning, setPhotoWarning] = useState(false);
 
   function handlePhotoChange(file: File | null) {
     setPhotoFile(file);
@@ -113,9 +114,21 @@ export default function ActivateShieldPage({ params }: ActivatePageProps) {
     setStatus('activating');
     setErrorMessage(null);
 
-    try {
-      const photoUrl = photoFile ? await uploadProfilePhoto(shieldId, photoFile) : null;
+    // Photo upload is optional and must NEVER block creating an emergency
+    // profile. If it fails (large/HEIC image, weak signal), activate anyway
+    // without the photo and tell the owner they can add it later.
+    let photoUrl: string | null = null;
+    let photoFailed = false;
+    if (photoFile) {
+      try {
+        photoUrl = await uploadProfilePhoto(shieldId, photoFile);
+      } catch (err) {
+        console.error('Photo upload failed (continuing without photo):', err);
+        photoFailed = true;
+      }
+    }
 
+    try {
       const fields = {
         profile_type: category || 'general',
         Name: name || null,
@@ -157,6 +170,7 @@ export default function ActivateShieldPage({ params }: ActivatePageProps) {
         return;
       }
 
+      setPhotoWarning(photoFailed);
       setStatus('success');
     } catch (err) {
       console.error(err);
@@ -193,6 +207,12 @@ export default function ActivateShieldPage({ params }: ActivatePageProps) {
           <div className="rounded-xl border border-emerald-500/40 bg-emerald-500/10 p-4 text-sm text-emerald-100">
             Your emergency profile is now active. Scan this shield anytime to view the profile.
           </div>
+
+          {photoWarning && (
+            <div className="rounded-xl border border-yellow-500/40 bg-yellow-500/10 p-4 text-sm text-yellow-100 text-left">
+              Your profile is active, but the <span className="font-semibold">photo didn&apos;t upload</span> — this can happen with large phone photos. You can add it anytime from the Edit screen (a smaller image works best).
+            </div>
+          )}
   
           <div className="rounded-xl border border-yellow-500/40 bg-yellow-500/10 p-5 text-left space-y-3">
             <div className="flex items-center justify-between gap-3">
